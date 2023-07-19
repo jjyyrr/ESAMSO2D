@@ -2,13 +2,24 @@ source("usePackages.R")
 source("loginFns.R")
 loadPkgs(c("shiny","DBI","tidyverse"))
 
-
+# results 
 resultsModal <- function() {
   modalDialog(
     as.integer(runif(1,1,100)),
-    footer = actionButton("nextday", "Next day >")# TODO: button should increase day counter by 1
+    footer = actionButton("nextday", label = "Next day >")# TODO: button should increase day counter by 1
   )
 }
+
+# summary page
+summarypageModal <- function() {
+  modalDialog(
+    title = "Results Summary",
+    "Your performance: ",
+    easyClose = FALSE,
+    footer = actionButton("closesummary", label = "Restart?")
+  )
+}
+
 
 getPlayerID <- function(playername,password){
   #open the connection
@@ -98,13 +109,15 @@ ui <- fluidPage(
             )
 )
 
+
 server <- function(input, output, session) {
-  # reactiveValues object for storing items like the user password
-  vals <- reactiveValues(randomName=NULL,password = NULL,playerid=NULL,playername=NULL,gamevariantid=1,score=NULL, countervalue=1)
   
+  # reactiveValues object for storing items like the user password
+  vals <- reactiveValues(randomName=NULL,password = NULL,playerid=NULL,playername=NULL,gamevariantid=1,score=NULL, countervalue=1, runCount=0, gameEnded = FALSE)
   
   #show modal on startup
   showModal(startUpModal())
+
   
   ############## listen to inputs buttons ###############
   
@@ -199,18 +212,49 @@ server <- function(input, output, session) {
   # RUN button
   observeEvent(input$run, {
     showModal(resultsModal())
+    vals$runCount <- vals$runCount + 1
+  })
+  
+  # if I click on run 14 times, show different results Modal
+  observeEvent(input$run, {
+    if (vals$runCount == 14) {
+      updateActionButton(session, "nextday", label = "End Game")
+    }
   })
   
   # next day button
   observeEvent(input$nextday, {
     removeModal() #remove summary page
     vals$countervalue <- vals$countervalue+1
+    # check if the button has been pressed 14 times (end game)
+    if (vals$countervalue > 14) {
+      vals$gameEnded <- TRUE
+    } 
+  })
+  
+  
+  # End of game button
+  observeEvent(input$nextday, {
+    if (vals$gameEnded) {
+      showModal(summarypageModal())
+    }
+  })
+  
+  # Close the summary page and refresh the game to day 1
+  observeEvent(input$closesummary, {
+    vals$countervalue <- 1
+    vals$gameEnded <- FALSE
+    updateActionButton(session, "nextday", label = "Next day >")
+    removeModal() # Close the summary page modal
   })
   
   # Publish score button
   observeEvent(input$publishscore,{
     publishScore(vals$playerid,vals$gamevariantid,vals$score)
   })
+  
+  # Return reactiveValues object as a reactive expression
+  #return(reactiveValuesToList(vals))
   
   
   ############### Output render ####################
@@ -236,7 +280,11 @@ server <- function(input, output, session) {
   })
   
   output$count<- renderText({
-    paste("Day ", vals$countervalue)
+    if (vals$countervalue <= 14) {
+      paste("Day ", vals$countervalue)
+    } else {
+      "Game Ended"
+    }
   }
     )
   
