@@ -11,12 +11,12 @@ resultsModal <- function() {
 }
 
 # summary page
-summarypageModal <- function() {
+leaderboardModal <- function() {
   modalDialog(
-    title = "Results Summary",
+    title = "Leaderboard",
     "Your performance: ",
     easyClose = FALSE,
-    footer = actionButton("closesummary", label = "Restart?")
+    footer = actionButton("restart", label = "Restart?")
   )
 }
 
@@ -113,7 +113,7 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   
   # reactiveValues object for storing items like the user password
-  vals <- reactiveValues(randomName=NULL,password = NULL,playerid=NULL,playername=NULL,gamevariantid=1,score=NULL, countervalue=1, runCount=0, gameEnded = FALSE)
+  vals <- reactiveValues(randomName=NULL,password = NULL,playerid=NULL,playername=NULL,gamevariantid=1,score=NULL, day=1, gameEnded = FALSE)
   
   #show modal on startup
   showModal(startUpModal())
@@ -129,7 +129,7 @@ server <- function(input, output, session) {
   
   observeEvent(input$generate, {
     print("generating")
-    vals$randomName = generatename()
+    vals$randomName = GenerateName()
   })
   
   # skip login button
@@ -212,37 +212,30 @@ server <- function(input, output, session) {
   # RUN button
   observeEvent(input$run, {
     showModal(resultsModal())
-    vals$runCount <- vals$runCount + 1
-  })
-  
-  # if I click on run 14 times, show different results Modal
-  observeEvent(input$run, {
-    if (vals$runCount == 14) {
-      updateActionButton(session, "nextday", label = "End Game")
+    if (vals$day == 14) {
+      updateActionButton(session, "nextday", label = "View leaderboard")
+      vals$gameEnded <- TRUE
     }
   })
   
-  # next day button
+  # Next day button
   observeEvent(input$nextday, {
     removeModal() #remove summary page
-    vals$countervalue <- vals$countervalue+1
-    # check if the button has been pressed 14 times (end game)
-    if (vals$countervalue > 14) {
-      vals$gameEnded <- TRUE
-    } 
+    vals$day <- vals$day + 1
   })
   
   
   # End of game button
   observeEvent(input$nextday, {
     if (vals$gameEnded) {
-      showModal(summarypageModal())
+      showModal(leaderboardModal())
     }
   })
   
   # Close the summary page and refresh the game to day 1
-  observeEvent(input$closesummary, {
-    vals$countervalue <- 1
+  observeEvent(input$restart, {
+    # TODO: LOAD INITIAL CONDITIONS (cash = 10k, reset movies, bla bla bla)
+    vals$day <- 1
     vals$gameEnded <- FALSE
     updateActionButton(session, "nextday", label = "Next day >")
     removeModal() # Close the summary page modal
@@ -279,9 +272,10 @@ server <- function(input, output, session) {
       as.character(vals$score)
   })
   
+  # display day
   output$count<- renderText({
-    if (vals$countervalue <= 14) {
-      paste("Day ", vals$countervalue)
+    if (vals$day <= 14) {
+      paste("Day ", vals$day)
     } else {
       "Game Ended"
     }

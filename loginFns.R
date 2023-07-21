@@ -75,7 +75,7 @@ registerModal <- function(failed = FALSE) {
 registerPlayer <- function(playername,password){
 
   conn <- getAWSConnection()
-  querytemplate <- "INSERT INTO LeaderPlayer (playername,password) VALUES (?id1,?id2);"
+  querytemplate <- "INSERT INTO PlayersDB (PlayerName,Password) VALUES (?id1,?id2);"
   queryString<- sqlInterpolate(conn, querytemplate,id1=playername,id2=password)
   result<-dbExecute(conn,queryString)
   
@@ -141,7 +141,7 @@ changepwModal <- function(playername, currentwrong = FALSE, newwrong = FALSE) {
 
 
 changePwQuery <- function(playername,oldPW,newPW){
-  querytemplate <- "UPDATE LeaderPlayer SET password=?newPW WHERE playername=?Plname AND password=?oldPW;"
+  querytemplate <- "UPDATE PlayersDB SET password=?newPW WHERE playername=?Plname AND password=?oldPW;"
   queryString<- sqlInterpolate(conn, querytemplate, Plname=playername , newPW=newPW,oldPW=oldPW)
   query(queryString)
 }
