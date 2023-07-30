@@ -50,13 +50,13 @@ GenerateName <- function(){
   # TODO: check if name is existing in player db
 }
 
-registerModal <- function(failed = FALSE) {
+registerModal <- function(username,failed = FALSE) {
   modalDialog(
     
     title = "Register a new user",
     
     ## TODO: make the generate button work
-    randomName<-GenerateName() ,
+    username ,
     actionButton("generate", "Generate"),
     
     passwordInput("password1", "Enter a new password:"),
@@ -89,7 +89,7 @@ registerPlayer <- function(playername,password){
 loginModal <- function(failed = FALSE) {
   modalDialog(
     title = "Login",
-    textInput("playername", "Enter your assigned Player Name", "BerserkCreepyHead"),
+    textInput("playername", "Enter your assigned Player Name", "StrongPinkDragon"),
     passwordInput("password3", "Enter your password:"),
     if (failed)
       div(tags$b("There is no registered player with that name and password. Try again or re-register.", style = "color: red;")),
@@ -106,7 +106,7 @@ postLoginModal <- function() {
     title = "Would you like play the tutorial or start the game?",
     footer = tagList(
       actionButton("tutorial", "Tutorial"),
-      actionButton("remove", "Start Game")
+      actionButton("startgame", "Start Game")
     )
     
   )
@@ -141,7 +141,7 @@ changepwModal <- function(playername, currentwrong = FALSE, newwrong = FALSE) {
 
 
 changePwQuery <- function(playername,oldPW,newPW){
-  querytemplate <- "UPDATE PlayersDB SET password=?newPW WHERE playername=?Plname AND password=?oldPW;"
+  querytemplate <- "UPDATE LeaderPlayer SET password=?newPW WHERE playername=?Plname AND password=?oldPW;"
   queryString<- sqlInterpolate(conn, querytemplate, Plname=playername , newPW=newPW,oldPW=oldPW)
   query(queryString)
 }
@@ -152,4 +152,23 @@ successfulchangeModal <- function() {
     title = "Password Change Successful",
     footer = tagList(modalButton("Close"))
   )
+}
+
+getPlayerID <- function(playername,password){
+  #open the connection
+  conn <- getAWSConnection()
+  querytemplate <- "SELECT * FROM PlayersDB WHERE PlayerName=?id1 AND Password=?id2;"
+  query<- sqlInterpolate(conn, querytemplate,id1=playername,id2=password)
+  result <- query(query)
+
+  if (nrow(result)==1){
+    playerid <- result$PlayerID[1]
+  } else {
+    print(result) #for debugging
+    playerid <- 0
+  }
+
+  dbDisconnect(conn)
+
+  playerid
 }

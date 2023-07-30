@@ -1,16 +1,42 @@
-source("usePackages.R")
-source("loginFns.R")
-loadPkgs(c("shiny","DBI","tidyverse"))
+### main code
+library(shiny)
+library(htmlwidgets)
+library(sortable)
+library(magrittr)
+library(shinyjs)
+library(DBI)
+library(tidyverse)
 
-# results 
+source("loginFns.R")
+source("moviemaker.R")
+#one more for calculations
+#one more for leaderboard
+
+disp_conv <- function(x){name = x$MovieName; 
+                          len = x$RunTime; 
+                          
+                          lapply(name, function(name){tags$div(
+                                                      icon("film", style = "font-size: 15px"),
+                                                      style = "font-size: 15px",
+                                                      tags$strong(name),
+                                                      paste0("(", as.integer(len)*15, "mins)" ),
+                                                      `data-mlen` = len,
+                                                      `data-name` = name
+                                                    )}
+                               )
+                          } #create any custom attribute with `data-`
+
+movielist <- generatemlist(1)
+Mobjs <- list()
+for(i in 1:length(movielist)){Mobjs[i] <- disp_conv(movielist[[i]])}
+
 resultsModal <- function() {
   modalDialog(
     as.integer(runif(1,1,100)),
-    footer = actionButton("nextday", label = "Next day >")# TODO: button should increase day counter by 1
+    footer = actionButton("nextday", "Next day >")# TODO: button should increase day counter by 1
   )
 }
 
-# summary page
 leaderboardModal <- function() {
   modalDialog(
     title = "Leaderboard",
@@ -20,116 +46,314 @@ leaderboardModal <- function() {
   )
 }
 
-
-getPlayerID <- function(playername,password){
-  #open the connection
-  conn <- getAWSConnection()
-  #password could contain an SQL insertion attack
-  #Create a template for the query with placeholders for playername and password
-  querytemplate <- "SELECT * FROM LeaderPlayer WHERE playername=?id1 AND password=?id2;"
-  query<- sqlInterpolate(conn, querytemplate,id1=playername,id2=password)
-  print(query) #for debug
-  result <- dbGetQuery(conn,query)
-  # If the query is successful, result should be a dataframe with one row
-  if (nrow(result)==1){
-    playerid <- result$playerid[1]
-  } else {
-    print(result) #for debugging
-    playerid <- 0
-  }
-  #print(result)
-  #print(playerid)
-  #Close the connection
-  dbDisconnect(conn)
-  # return the playerid
-  playerid
-}
-
-
-publishScore <- function(playerid,gamevariantid,score){
-  conn <- getAWSConnection()
-  querytemplate <- "INSERT INTO LeaderScore (playerid,gamevariantid,asoftime,score) VALUES (?id1,?id2,NOW(),?id3)"
-  query <- sqlInterpolate(conn, querytemplate,id1=playerid,id2=gamevariantid,id3=score)
-  #print(query) #for debug
-  success <- FALSE
-  tryCatch(
-    {  # This is not a SELECT query so we use dbExecute
-      result <- dbExecute(conn,query)
-      print("Score published")
-      success <- TRUE
-    }, error=function(cond){print("publishScore: ERROR")
-      print(cond)
-    }, 
-    warning=function(cond){print("publishScore: WARNING")
-      print(cond)},
-    finally = {}
-  )
-  dbDisconnect(conn)
-}
-
-getLeaderBoard <- function(gamevariantid){
-  conn <- getAWSConnection()
-  #First, we need to know whether highscorewins for this game variant
-  query <- paste0("SELECT highscorewins FROM LeaderGameVariant WHERE gamevariantid=",gamevariantid)
-  result <- dbGetQuery(conn,query)
-  #result should return a single row
-  highscorewins <- result$highscorewins[1]
-  #Assemble the query for this gamevariantid
-  query <- "SELECT lp.playername,ls.score,ls.asoftime  FROM LeaderScore as ls INNER JOIN LeaderPlayer as lp"
-  query <- paste0(query," ON (ls.playerid=lp.playerid) WHERE ls.gamevariantid =")
-  query <- paste0(query,gamevariantid)
-  if (highscorewins)
-    query <- paste0(query, " ORDER BY ls.score DESC,ls.asoftime ASC")
-  else
-    query <- paste0(query, " ORDER BY ls.score ASC,ls.asoftime ASC")
-  print(query) # for debugging
-  result <- dbGetQuery(conn,query)
-  dbDisconnect(conn)
-  result
-}
-
-
 ui <- fluidPage(
-  # Title
-  h3("I LIKE TO MOVIE MOVIE"),
+  useShinyjs(),
+  tags$head(includeCSS("www/styles.css"),
+            tags$script(src = "movieobjects.js")),
+  fluidRow(class = "panel panel-heading",
+           div(class = "panel-heading",
+               h3("I like to Movie Movie")
+           ),
+           sidebarPanel(class = "panel-body",width = 2,
+                        
+                        column(width = 12,
+                               textOutput("loggedInAs"),
+                               textOutput("day"),
+                               textOutput("cash")# TODO add the cash on hand here
+                        ),
+                        
+                        #Movie list container
+                        column(width = 12,
+                               tags$div(class = "panel panel-default",
+                                        tags$div(class = "panel-heading", icon("film"), tags$strong("Movies") ), #makes it bold
+                                        tags$div(class = "panel-body", id = "movies", Mobjs)
+                                        
+                               )
+                        ),
+                        
+                        #Legend container
+                        column(width = 12,
+                               tags$div(class = "panel panel-default",
+                                        tags$div(class = "panel-heading", icon("compass"), tags$strong("Legend")),
+                                        tags$div(class = "panel-body", id = "legend",
+                                                 tags$div(class = "ad", id = "ad", "Advertisements"),
+                                                 tags$div(class = "run", id = "run", "Run Time"), #TODO: i think no need this, colour shld follow the movie, means need change the JS
+                                                 tags$div(class = "clean", id = "clean", "Cleaning"),
+                                                 tags$div("$7/tickets") #TODO: make this change when it is weekend/PH
+                                        )
+                               )
+                        ),
+                        
+                        #Remove item container
+                        column(width = 12,
+                               tags$div(class = "panel panel-default",
+                                        tags$div( class = "panel-heading", icon("trash"), tags$strong("Remove item") ),
+                                        tags$div(class = "panel-body", id = "sortable_bin")
+                               )
+                        ),
+                        
+                        #Run button
+                        column(width = 12,actionButton("run", "RUN")),
+                        
+                        
+           ), #bracket for closing sidebarPanel
+           
+           #main ui area
+           mainPanel(
+             
+             #Hall 1
+             column(tags$style(HTML(".hall-body {min-height: 500px;}")),
+                    width = 3,
+                    tags$div(class = "panel panel-default",
+                             tags$div(class = "panel-heading", icon("play"), "Hall 1"),
+                             tags$div(class = "hall-body", id = "hall1",
+                                      lapply(0:47, function(i) { #allows us to create the timings. change the loop number to change day length
+                                        time = sprintf("%02d:%02d", 11 + i %/% 4, (i %% 4) * 15)
+                                        tags$div(class = "time-frame", id = paste0("1time", i+1), time, #makes the period frame
+                                                 tags$div(class = "entrycell", id = paste0("hall1period", i+1))) #makes the entry cell (green one to drop). entry cells are tied to the frame.
+                                      })
+                             )
+                    )
+             ),
+             
+             #Hall 2
+             column(tags$style(HTML(".hall-body {min-height: 500px;}")),
+                    width = 3,
+                    tags$div(class = "panel panel-default",
+                             tags$div(class = "panel-heading", icon("play"), "Hall 2"),
+                             tags$div(class = "hall-body", id = "hall2",
+                                      lapply(0:47, function(i) { 
+                                        time = sprintf("%02d:%02d", 11 + i %/% 4, (i %% 4) * 15)
+                                        tags$div(class = "time-frame", id = paste0("2time", i+1), time, #note the frames and cells have unique ids for each hall
+                                                 tags$div(class = "entrycell", id = paste0("hall2period", i+1)))
+                                      })
+                             )
+                    )
+             ),
+             
+             #Hall 3
+             column(tags$style(HTML(".hall-body {min-height: 500px;}")),
+                    width = 3,
+                    tags$div(class = "panel panel-default",
+                             tags$div(class = "panel-heading", icon("play"), "Hall 3"),
+                             tags$div(class = "hall-body", id = "hall3",
+                                      lapply(0:47, function(i) { 
+                                        time = sprintf("%02d:%02d", 11 + i %/% 4, (i %% 4) * 15)
+                                        tags$div(class = "time-frame", id = paste0("3time", i+1), time, 
+                                                 tags$div(class = "entrycell", id = paste0("hall3period", i+1)))
+                                      })
+                             )
+                    )
+             ),
+             
+             #Hall 4
+             column(tags$style(HTML(".hall-body {min-height: 500px;}")),
+                    width = 3,
+                    tags$div(class = "panel panel-default",
+                             tags$div(class = "panel-heading", icon("play"), "Hall 4"),
+                             tags$div(class = "hall-body", id = "hall4",
+                                      lapply(0:47, function(i) { 
+                                        time = sprintf("%02d:%02d", 11 + i %/% 4, (i %% 4) * 15)
+                                        tags$div(class = "time-frame", id = paste0("4time", i+1), time, 
+                                                 tags$div(class = "entrycell", id = paste0("hall4period", i+1)))
+                                      })
+                             )
+                    )
+             ),
+           ) #bracket for closing mainPanel
+  ),#bracket for closing fluid row
   
-  # Day counter
-  textOutput("count"),
-  
-  #Side bar
-  sidebarPanel(h4("Drag and Drop Events"),
-               tags$div(id = "event1",class = "event", draggable = "true","Movie 1"),
-               tags$div(id = "event1",class = "event", draggable = "true","Movie 2")
+  #making the generated containers in the main panel become Sortable objects to use the sortable package for drag and drop. they are technically ordered lists.
+  sortable_js("movies", #note the container id
+              options = sortable_options(
+                sort = FALSE, #prevents the list items from moving inside the container but still can interact
+                group = list(
+                  pull = "clone", #clones the movie when we drag it
+                  name = "sortGroup1", #makes all the movies fall under sortGroup1. kinda like a category
+                  put = F #prevents dropping into the movie area
+                ),
+                onSort = sortable_js_capture_input("sort_vars") #technically useless jz leave here first for my referencing
+              )
   ),
   
-  # Schedule
-  mainPanel(div(h2("EMPTY SCHEDULE HERE")),
-            actionButton("run", "RUN")
-            
-            )
+  #making the legend. technically such a run around way but my brain was too tired to think properly. had to make 3 classes in the ui side lol.
+                      #technically we dont need this block of code, but I shall leave it in here just for the lols - melvin
+  
+  sortable_js("legend", 
+              options = sortable_options(
+                sort = FALSE,
+                filter = list('.ad', '.run', '.clean'),
+                group = list(
+                  pull = F,
+                  name = "sortGroup2",
+                  put = F
+                )
+              )
+  ),
+  
+  #makes the hall a sortable list. this list is for the time frames NOT the entry cells.
+  
+  # Hall1 sortables
+  sortable_js("hall1",  
+              options = sortable_options(
+                sort = F, #prevents movement of the time frames so u cant drag any of the frames.
+                filter = '.time-frame', #prevents interaction with the time frames totally. makes them look like a static object.
+                group = list(
+                  group = "sortGroup1", #'sortGroup1' allows the frames to communicate. different lists must have same name in order to drag and drop between them. cant drop into a diff group.
+                  put = F, #prevents dropping anything into the time frames. e.g. u can drop movies inbetween time frames if dont have this. 
+                  pull = F #prevents dragging any timeframe out of the hall
+                ),
+                onSort = sortable_js_capture_input("sort_y"), #leave here for my future ref
+              )
+              
+  ),
+  
+  # Hall2 sortables (same thing as hall 1. All the comments are the same for all halls)
+  sortable_js("hall2", 
+              options = sortable_options(
+                sort = F,
+                filter = '.time-frame',
+                group = list(
+                  group = "sortGroup1",
+                  put = F,
+                  pull = F
+                ),
+                onSort = sortable_js_capture_input("sort_y")
+              )
+  ),
+  
+  #Hall 3 sortables
+  sortable_js("hall3",
+              options = sortable_options(
+                sort = F,
+                filter = '.time-frame',
+                group = list(
+                  group = "sortGroup1",
+                  put = F,
+                  pull = F
+                ),
+                onSort = sortable_js_capture_input("sort_y")
+              )
+  ),
+  
+  #Hall 4 sortables
+  sortable_js("hall4",
+              options = sortable_options(
+                sort = F,
+                filter = '.time-frame',
+                group = list(
+                  group = "sortGroup1",
+                  put = F,
+                  pull = F
+                ),
+                onSort = sortable_js_capture_input("sort_y")
+              )
+  ),
+  
+  #Making the garbage disposal
+  sortable_js("sortable_bin", 
+              options = sortable_options(
+                group = list(
+                  group = "sortGroup1",
+                  put = TRUE,
+                  pull = TRUE
+                ),
+                onAdd = htmlwidgets::JS("function (evt) { this.el.removeChild(evt.item); }") # i think kinda self-explanatory this one. jz kills the item (movie).
+              )
+  ),
+  
+  #We gonna make the entry cells (the green box) now to drop the movies into. this makes each cell in each frame a unique sortable list. helps us call later
+  
+  #Hall 1 green cells
+  lapply(0:47, function(i) { 
+    period_id <- paste0("hall1period", i+1) #hall1period1 = first time of the day e.g. 11:00, hall1period2 = 11.15, so on so forth
+    sortable_js(
+      period_id,
+      options = sortable_options(     
+        group = list(group ="sortGroup1", 
+                     
+                     #'put' limits the cell to only take one element, preventing two movies from dropping into the same time slot
+                     put = htmlwidgets::JS("function (to) {return to.el.children.length < 1;}")),
+        
+                      #onAdd executes the js code when a movie is dropped into a cell             
+                      #ps the onAdd cant comment inline cos stupid js and r tingz. 
+                      #but this is all to change the frame and cell colors when dropping. i tried to name it to make it as easy to understand le
+                      onAdd = htmlwidgets::JS("function (evt) {onAddFunction1(evt);}"),
+        
+                      #onMove executes the moment u drag the movie off and it touches a different cell. 
+                      #even hovering will count. this js reverts the colours back to the default
+                      onMove = htmlwidgets::JS("function (evt) {onMoveFunction1(evt);}")
+      )
+    )
+  }),
+  
+  #comments same as hall1. all this code is copy pasted just changed the names accordingly for the diff halls.
+  #Hall 2 green cells
+  lapply(0:47, function(i) {
+    period_id <- paste0("hall2period", i+1)
+    sortable_js(
+      period_id,
+      options = sortable_options(
+        group = list(group ="sortGroup1", 
+                     put = htmlwidgets::JS("function (to) {return to.el.children.length < 1;}")),
+                      onAdd = htmlwidgets::JS("function (evt) {onAddFunction2(evt);}" ),
+                      onMove = htmlwidgets::JS("function (evt) {onMoveFunction2(evt);}")
+      )
+    )
+  }),
+  
+  #Hall 3 green cells
+  lapply(0:47, function(i) {
+    period_id <- paste0("hall3period", i+1)
+    sortable_js(
+      period_id,
+      options = sortable_options(
+        group = list(group ="sortGroup1", 
+                     put = htmlwidgets::JS("function (to) {return to.el.children.length < 1;}")),
+                      onAdd = htmlwidgets::JS("function (evt) {onAddFunction3(evt);}" ),
+                      onMove = htmlwidgets::JS("function (evt) {onMoveFunction3(evt);}")
+      )
+    )
+  }),
+  
+  #Hall 4 green cells
+  lapply(0:47, function(i) {
+    period_id <- paste0("hall4period", i+1)
+    sortable_js(
+      period_id,
+      options = sortable_options(
+        group = list(group ="sortGroup1",
+                     put = htmlwidgets::JS("function (to) {return to.el.children.length < 1;}")),
+                      onAdd = htmlwidgets::JS("function (evt) {onAddFunction4(evt);}" ),
+                      onMove = htmlwidgets::JS("function (evt) {onMoveFunction4(evt);}")
+      )
+    )
+  })
+  
 )
 
-
 server <- function(input, output, session) {
-  
   # reactiveValues object for storing items like the user password
-  vals <- reactiveValues(randomName=NULL,password = NULL,playerid=NULL,playername=NULL,gamevariantid=1,score=NULL, day=1, gameEnded = FALSE)
+  vals <- reactiveValues(randomName=NULL, password = NULL, playerid=NULL, playername=NULL, gamevariantid=1, score=NULL, day=1, gameEnded=F)
+  
   
   #show modal on startup
   showModal(startUpModal())
-
   
   ############## listen to inputs buttons ###############
   
   #`Register button (in start up modal)
   observeEvent(input$register, {
     removeModal() #remove startupModal
-    showModal(registerModal(failed=FALSE))
+    vals$randomName <- GenerateName()
+    print(vals$randomName)
+    showModal(registerModal(vals$randomName,failed=FALSE))
   })
   
+  #Generate Button
   observeEvent(input$generate, {
     print("generating")
-    vals$randomName = GenerateName()
+    vals$randomName <- GenerateName()
   })
   
   # skip login button
@@ -211,28 +435,33 @@ server <- function(input, output, session) {
   
   # RUN button
   observeEvent(input$run, {
+    dataArr <- htmlwidgets::JS('getScheduledData()') #TODO: read HTML data for movie timings for calculations
     showModal(resultsModal())
+    
     if (vals$day == 14) {
       updateActionButton(session, "nextday", label = "View leaderboard")
       vals$gameEnded <- TRUE
     }
+  
+    
   })
   
-  # Next day button
+  # next day button
   observeEvent(input$nextday, {
     removeModal() #remove summary page
-    vals$day <- vals$day + 1
-  })
-  
-  
-  # End of game button
-  observeEvent(input$nextday, {
+    
     if (vals$gameEnded) {
       showModal(leaderboardModal())
     }
+    
+    vals$day <- vals$day+1
+    
+    if (vals$day %in% c(4,9,12)){ #TODO: regenerate list of movies
+      #vals$movielist<-generatemlist(vals$day)
+      #vals$mobjs<-generateMobjs(vals$movielist)
+    }
   })
   
-  # Close the summary page and refresh the game to day 1
   observeEvent(input$restart, {
     # TODO: LOAD INITIAL CONDITIONS (cash = 10k, reset movies, bla bla bla)
     vals$day <- 1
@@ -241,61 +470,26 @@ server <- function(input, output, session) {
     removeModal() # Close the summary page modal
   })
   
-  # Publish score button
-  observeEvent(input$publishscore,{
-    publishScore(vals$playerid,vals$gamevariantid,vals$score)
-  })
+############### Output render ####################
   
-  # Return reactiveValues object as a reactive expression
-  #return(reactiveValuesToList(vals))
-  
-  
-  ############### Output render ####################
-  
-  # Display name and change PW button if logged in
-  output$loggedInAs <- renderUI({
+  # Display name 
+  output$loggedInAs <- renderText({
     if (is.null(vals$playername))
       "Not logged in yet."
     else{ 
-      tagList(
-      p(vals$playername),
-      actionButton("changepw", "Change Password")
-      )
+      vals$playername
     }
   })
   
-  # Display score (when play button is pressed, score!=0)
-  output$score <- renderUI({
-    if (is.null(vals$score))
-      "No score yet."
-    else
-      as.character(vals$score)
-  })
-  
-  # display day
-  output$count<- renderText({
+  #Day counter
+  output$day <- renderText({
     if (vals$day <= 14) {
       paste("Day ", vals$day)
     } else {
       "Game Ended"
     }
-  }
-    )
-  
-  # Display print Publish Score button
-  output$moreControls <- renderUI({
-    req(vals$score,vals$playerid) # if vals$score is NULL, the controls will not be visible
-    tagList(
-      actionButton("publishscore", "Publish Your Score"),
-      tableOutput("leaderboard")
-    )
   })
   
-  #Display leaderboard
-  output$leaderboard <- renderTable({numclicks <- input$publishscore +input$playgame #to force a refresh whenever one of these buttons is clicked
-                                    leaderboard <- getLeaderBoard(vals$gamevariantid)
-                                    leaderboard}
-                                    )
 }
 
 ##################### APP #####################

@@ -1,0 +1,76 @@
+.icon {
+    height: 50px;
+    width: 50px;
+    font-size: 50px;
+}
+
+.hall-body {
+    min-width: 50px;
+    min-height: 100px;
+    margin: 0px;
+    border: 1px solid #0b0423;
+    justify-content: center;
+    align-items: center;
+}
+
+.entrycell {
+    height: 100%;
+    min-width: 30px;
+    margin-left: 10px;
+    padding: 5px;
+    color: #0b0423;
+    background-color: rgba(102, 255, 153, 0.5);
+    /*display: flex;*/
+    /*border: 1px solid #0b0423;*/
+    align-items: right;
+    justify-content: center;
+    catch: 1;
+}
+
+.time-frame {
+    height: 100%;
+    width: 100%;
+    padding: 1px;
+    color: #0b0423;
+    background: white;
+    /*display: flex;*/
+    align-items: center;
+    /*border: 1px solid #0b0423;*/
+    justify-content: center;
+}
+
+.ad {
+    height: 100%;
+    width: 100%;
+    padding: 1px;
+    color: #0b0423;
+    background: #d93df5;
+    display: flex;
+    align-items: center;
+    border: 1px solid #0b0423;
+    justify-content: center;
+}
+
+.run {
+    height: 100%;
+    width: 100%;
+    padding: 1px;
+    color: #0b0423;
+    background: #7e88f2;
+    display: flex;
+    align-items: center;
+    border: 1px solid #0b0423;
+    justify-content: center;
+}
+
+.clean {
+    height: 100%;
+    width: 100%;
+    padding: 1px;
+    color: #0b0423;
+    background: #a061ed;
+    display: flex;
+    align-items: center;
+    border: 1px solid #0b0423;
+    justify-content: center;
+}
