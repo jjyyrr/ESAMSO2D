@@ -13,7 +13,8 @@ source("moviemaker.R")
 #one more for leaderboard
 
 disp_conv <- function(x){name = x$MovieName; 
-                          len = x$RunTime; 
+                          len = x$RunTime;
+                          colstr=x$Color;
                           
                           lapply(name, function(name){tags$div(
                                                       icon("film", style = "font-size: 15px"),
@@ -21,7 +22,8 @@ disp_conv <- function(x){name = x$MovieName;
                                                       tags$strong(name),
                                                       paste0("(", as.integer(len)*15, "mins)" ),
                                                       `data-mlen` = len,
-                                                      `data-name` = name
+                                                      `data-name` = name,
+                                                      `data-colstr` = colstr
                                                     )}
                                )
                           } #create any custom attribute with `data-`
@@ -82,7 +84,6 @@ ui <- fluidPage(
                                         tags$div(class = "panel-heading", icon("compass"), tags$strong("Legend")),
                                         tags$div(class = "panel-body", id = "legend",
                                                  tags$div(class = "ad", id = "ad", "Advertisements"),
-                                                 tags$div(class = "run", id = "run", "Run Time"), #TODO: i think no need this, colour shld follow the movie, means need change the JS
                                                  tags$div(class = "clean", id = "clean", "Cleaning"),
                                                  textOutput("ticketprices") #TODO: make this change when it is weekend/PH
                                         )
@@ -327,7 +328,7 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
   # reactiveValues object for storing items like the user password
-  vals <- reactiveValues(randomName=NULL, password = NULL, playerid=NULL, playername=NULL, gamevariantid=1, score=NULL, day=1, gameEnded=F, cash=10000)
+  vals <- reactiveValues(randomName=NULL, password = NULL, playerid=NULL, playername=NULL, gamevariantid=1, score=NULL, day=1, gameEnded=F, cash=10000, mobjs=NULL)
   
   
   #show modal on startup
@@ -443,6 +444,7 @@ server <- function(input, output, session) {
   # RUN button
   observeEvent(input$run, {
     dataArr <- htmlwidgets::JS('getScheduledData()') #TODO: read HTML data for movie timings for calculations
+    print(dataArr)
     #results <- calculate(dataArr)
     #update cash balance
     showModal(resultsModal())
@@ -519,19 +521,20 @@ server <- function(input, output, session) {
     print ("im rendering movie objects")
     print (length(vals$mobjs))
     tags$div(class = "panel-body", 
-             id = "movies", 
+             id = "movies",
+             vals$mobjs,
              sortable_js("movies", #note the container id
-                          options = sortable_options(
-                           sort = FALSE, #prevents the list items from moving inside the container but still can interact
-                            group = list(
-                              pull = "clone", #clones the movie when we drag it
-                              name = "sortGroup1", #makes all the movies fall under sortGroup1. kinda like a category
-                              put = F #prevents dropping into the movie area
-                            ),
-                            onSort = sortable_js_capture_input("sort_vars") #technically useless jz leave here first for my referencing
-                          )
-                          ),
-             vals$mobjs)
+                                    options = sortable_options(
+                                      sort = FALSE, #prevents the list items from moving inside the container but still can interact
+                                      group = list(
+                                        pull = "clone", #clones the movie when we drag it
+                                        name = "sortGroup1", #makes all the movies fall under sortGroup1. kinda like a category
+                                        put = F #prevents dropping into the movie area
+                                      ),
+                                      onSort = sortable_js_capture_input("sort_vars") #technically useless jz leave here first for my referencing
+                                    )
+             )
+             )
   })
 }
 
