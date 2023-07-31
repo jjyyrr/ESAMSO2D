@@ -24,24 +24,17 @@ query <- function(queryString){
   result
 }
 
-queryExc <- function(queryString){
-  conn <- getAWSConnection()
-  result <- dbExecute(conn,queryString)
-  dbDisconnect(conn)
-  result
-}
-
 generatemlist <- function(day){
-  print("im in generate mlist2")
+  print("im in generate mlist")
   
   conn <- getAWSConnection()
    
   querytemplate <- "SELECT * FROM MoviesDB WHERE ReleaseDate <= ?day AND EndingDate > ?day"
   
   queryString<- sqlInterpolate(conn, querytemplate,day=day)
-  print(queryString)
+  #print(queryString)
   queryoutput<-dbGetQuery(conn,queryString)
-  print(queryoutput)
+  #print(queryoutput)
   dbDisconnect(conn)
   
   movielist <- list()

@@ -26,9 +26,14 @@ disp_conv <- function(x){name = x$MovieName;
                                )
                           } #create any custom attribute with `data-`
 
-movielist <- generatemlist(1)
-Mobjs <- list()
-for(i in 1:length(movielist)){Mobjs[i] <- disp_conv(movielist[[i]])}
+generateMobjs <- function(movielist){
+  Mobjs <- list()
+  print("i am generating Mobjs")
+  print(length(movielist))
+  for(i in 1:length(movielist)){Mobjs[i] <- disp_conv(movielist[[i]])}
+  print(length(Mobjs))
+  Mobjs
+}
 
 resultsModal <- function() {
   modalDialog(
@@ -66,7 +71,7 @@ ui <- fluidPage(
                         column(width = 12,
                                tags$div(class = "panel panel-default",
                                         tags$div(class = "panel-heading", icon("film"), tags$strong("Movies") ), #makes it bold
-                                        tags$div(class = "panel-body", id = "movies", Mobjs)
+                                        uiOutput("movieobjects")
                                         
                                )
                         ),
@@ -79,7 +84,7 @@ ui <- fluidPage(
                                                  tags$div(class = "ad", id = "ad", "Advertisements"),
                                                  tags$div(class = "run", id = "run", "Run Time"), #TODO: i think no need this, colour shld follow the movie, means need change the JS
                                                  tags$div(class = "clean", id = "clean", "Cleaning"),
-                                                 tags$div("$7/tickets") #TODO: make this change when it is weekend/PH
+                                                 textOutput("ticketprices") #TODO: make this change when it is weekend/PH
                                         )
                                )
                         ),
@@ -163,18 +168,6 @@ ui <- fluidPage(
            ) #bracket for closing mainPanel
   ),#bracket for closing fluid row
   
-  #making the generated containers in the main panel become Sortable objects to use the sortable package for drag and drop. they are technically ordered lists.
-  sortable_js("movies", #note the container id
-              options = sortable_options(
-                sort = FALSE, #prevents the list items from moving inside the container but still can interact
-                group = list(
-                  pull = "clone", #clones the movie when we drag it
-                  name = "sortGroup1", #makes all the movies fall under sortGroup1. kinda like a category
-                  put = F #prevents dropping into the movie area
-                ),
-                onSort = sortable_js_capture_input("sort_vars") #technically useless jz leave here first for my referencing
-              )
-  ),
   
   #making the legend. technically such a run around way but my brain was too tired to think properly. had to make 3 classes in the ui side lol.
                       #technically we dont need this block of code, but I shall leave it in here just for the lols - melvin
@@ -334,7 +327,7 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
   # reactiveValues object for storing items like the user password
-  vals <- reactiveValues(randomName=NULL, password = NULL, playerid=NULL, playername=NULL, gamevariantid=1, score=NULL, day=1, gameEnded=F)
+  vals <- reactiveValues(randomName=NULL, password = NULL, playerid=NULL, playername=NULL, gamevariantid=1, score=NULL, day=1, gameEnded=F, cash=10000)
   
   
   #show modal on startup
@@ -350,15 +343,17 @@ server <- function(input, output, session) {
     showModal(registerModal(vals$randomName,failed=FALSE))
   })
   
+  #skip button
+  observeEvent(input$skip, {
+    removeModal() #remove start up modal
+    vals$movielist<-generatemlist(1)
+    vals$mobjs<-generateMobjs(vals$movielist) #generate movie list
+  })
+  
   #Generate Button
   observeEvent(input$generate, {
     print("generating")
     vals$randomName <- GenerateName()
-  })
-  
-  # skip login button
-  observeEvent(input$skip, {
-    removeModal() #remove start up modal
   })
   
   # Register OK button (in register modal)
@@ -395,6 +390,10 @@ server <- function(input, output, session) {
       #store the playerid and playername and close the dialog
       vals$playerid <- playerid
       vals$playername <- input$playername
+      
+      #TODO:load initial conditions
+      vals$movielist<-generatemlist(1)
+      vals$mobjs<-generateMobjs(vals$movielist) #generate movie list
 
       removeModal() #remove login modal
       showModal(postLoginModal())
@@ -408,6 +407,14 @@ server <- function(input, output, session) {
   observeEvent(input$tutorial, {
     removeModal() #remove post-login modal
     # TODO: Insert Tutorial modal here
+  })
+  
+  observeEvent(input$startgame, {
+    removeModal() #remove tutorial modal
+    
+    #TODO:load initial conditions
+    vals$movielist<-generatemlist(1)
+    vals$mobjs<-generateMobjs(vals$movielist) #generate movie list
   })
   
   
@@ -436,6 +443,8 @@ server <- function(input, output, session) {
   # RUN button
   observeEvent(input$run, {
     dataArr <- htmlwidgets::JS('getScheduledData()') #TODO: read HTML data for movie timings for calculations
+    #results <- calculate(dataArr)
+    #update cash balance
     showModal(resultsModal())
     
     if (vals$day == 14) {
@@ -456,9 +465,9 @@ server <- function(input, output, session) {
     
     vals$day <- vals$day+1
     
-    if (vals$day %in% c(4,9,12)){ #TODO: regenerate list of movies
-      #vals$movielist<-generatemlist(vals$day)
-      #vals$mobjs<-generateMobjs(vals$movielist)
+    if (vals$day %in% c(4,9,12)){ 
+      vals$movielist<-generatemlist(vals$day)
+      vals$mobjs<-generateMobjs(vals$movielist)
     }
   })
   
@@ -481,15 +490,49 @@ server <- function(input, output, session) {
     }
   })
   
+  # Display cash 
+  output$cash <- renderText({
+      paste("Cash balance: $ ", vals$cash)
+  })
+  
   #Day counter
   output$day <- renderText({
     if (vals$day <= 14) {
-      paste("Day ", vals$day)
+      paste("Day ", vals$day, "/14")
     } else {
       "Game Ended"
     }
   })
   
+  #ticket prices
+  output$ticketprices <- renderText({
+    if (vals$day %in% c(6,7,12,13,14)) {
+      paste("$", 10, "/ticket")
+    } else {
+      paste("$", 7, "/ticket")
+    }
+  })
+  
+  
+  #movie objects
+  output$movieobjects<- renderUI({
+    print ("im rendering movie objects")
+    print (length(vals$mobjs))
+    tags$div(class = "panel-body", 
+             id = "movies", 
+             sortable_js("movies", #note the container id
+                          options = sortable_options(
+                           sort = FALSE, #prevents the list items from moving inside the container but still can interact
+                            group = list(
+                              pull = "clone", #clones the movie when we drag it
+                              name = "sortGroup1", #makes all the movies fall under sortGroup1. kinda like a category
+                              put = F #prevents dropping into the movie area
+                            ),
+                            onSort = sortable_js_capture_input("sort_vars") #technically useless jz leave here first for my referencing
+                          )
+                          ),
+             vals$mobjs)
+  })
 }
 
 ##################### APP #####################
