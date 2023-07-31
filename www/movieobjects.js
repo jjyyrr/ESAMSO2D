@@ -230,7 +230,7 @@ function onMoveFunction4(evt) {
     //console.log(cleanind)//
     if (cleanind < 49) { cleanframe.style.backgroundColor = 'white'; cleancell.style.display = 'flex' };
     for (var i = rtind; i < rtind + mlen; i++) {
-        var entryCell = document.getElementById('hall3period' + i);
+        var entryCell = document.getElementById('hall4period' + i);
         var showframes = document.getElementById('4time' + i);
         var entryframe = document.getElementById('4time' + adind);
         entryframe.style.backgroundColor = 'white';
