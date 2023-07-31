@@ -4,6 +4,10 @@
     font-size: 50px;
 }
 
+.col-sm-2 {
+  margin-left: 125px;
+}
+
 .hall-body {
     min-width: 50px;
     min-height: 100px;
