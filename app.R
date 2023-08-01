@@ -37,6 +37,7 @@ disp_conv <- function(x){name = x$MovieName;
                                                       
                                                       
                                                     )
+                                                      `data-colstr` = colstr
                                                     )}
                                )
                           } #create any custom attribute with `data-`
@@ -71,8 +72,9 @@ ui <- fluidPage(
   tags$head(includeCSS("www/styles.css"),
             tags$script(src = "movieobjects.js")),
   fluidRow(class = "panel panel-heading",
+           style="background-image: url('CinemaBaseUILong.png'); background-size: 100% 100%; background-repeat: no-repeat; background-position: center;",
            div(class = "panel-heading",
-               h3("I like to Movie Movie")
+               h3(style = "padding: 20px; color: #FFFFFF; text-align: center;", "I like to Movie Movie")
            ),
            sidebarPanel(class = "panel-body",width = 2,
                         
@@ -97,7 +99,6 @@ ui <- fluidPage(
                                         tags$div(class = "panel-heading", icon("compass"), tags$strong("Legend")),
                                         tags$div(class = "panel-body", id = "legend",
                                                  tags$div(class = "ad", id = "ad", "Advertisements"),
-                                                 tags$div(class = "run", id = "run", "Run Time"), #TODO: i think no need this, colour shld follow the movie, means need change the JS
                                                  tags$div(class = "clean", id = "clean", "Cleaning"),
                                                  textOutput("ticketprices") #TODO: make this change when it is weekend/PH
                                         )
@@ -346,7 +347,7 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
   # reactiveValues object for storing items like the user password
-  vals <- reactiveValues(randomName=NULL, password = NULL, playerid=NULL, playername=NULL, gamevariantid=1, score=NULL, day=1, gameEnded=F, cash=10000)
+  vals <- reactiveValues(randomName=NULL, password = NULL, playerid=NULL, playername=NULL, gamevariantid=1, score=NULL, day=1, gameEnded=F, cash=10000, mobjs=NULL)
   
   
   #show modal on startup
@@ -462,6 +463,7 @@ server <- function(input, output, session) {
   # RUN button
   observeEvent(input$run, {
     dataArr <- htmlwidgets::JS('getScheduledData()') #TODO: read HTML data for movie timings for calculations
+    print(dataArr)
     #results <- calculate(dataArr)
     #update cash balance
     showModal(resultsModal())
@@ -537,6 +539,7 @@ server <- function(input, output, session) {
   output$movieobjects<- renderUI({
     print ("im rendering movie objects")
     print (length(vals$mobjs))
+<<<<<<< HEAD
     # tags$div(class = "panel-body", 
     #          id = "movies", 
     #          sortable_js("movies", #note the container id
@@ -553,6 +556,7 @@ server <- function(input, output, session) {
     #                       ),
     #          vals$mobjs)
     vals$mobjs
+                                        pull = "clone", #clones the movie when we drag it
   })
 }
 
