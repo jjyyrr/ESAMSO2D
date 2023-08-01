@@ -36,12 +36,11 @@ generatemlist <- function(day){
   queryoutput<-dbGetQuery(conn,queryString)
   #print(queryoutput)
   dbDisconnect(conn)
-  
   movielist <- list()
   
   for (i in 1:nrow(queryoutput)) {
-    assign( paste0("movie", i), subset(queryoutput, MovieID == i) )
-    movielist[[i]] <- subset(queryoutput, MovieID == i)
+    assign( paste0("movie", i), subset(queryoutput[i,]) )
+    movielist[[i]] <- subset(queryoutput[i,])
   }
   
   movielist
