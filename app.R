@@ -14,14 +14,27 @@ source("moviemaker.R")
 
 disp_conv <- function(x){name = x$MovieName; 
                           len = x$RunTime; 
-                          
-                          lapply(name, function(name){tags$div(
-                                                      icon("film", style = "font-size: 15px"),
-                                                      style = "font-size: 15px",
-                                                      tags$strong(name),
-                                                      paste0("(", as.integer(len)*15, "mins)" ),
-                                                      `data-mlen` = len,
-                                                      `data-name` = name
+                          pops = x$Popularity;
+                          lapply(name, function(name){tags$div(class = "mvcon", id = paste0("moviecon", name),
+                                                               tags$div(id = "banner", icon("compass"), `data-mlen` = len, `data-name` = name),
+                                                               sortable_js(paste0("moviecon", name),  
+                                                                           options = sortable_options(
+                                                                             sort = F, #prevents movement of the time frames so u cant drag any of the frames.
+                                                                             filter = '.mdeets', #prevents interaction with the time frames totally. makes them look like a static object.
+                                                                             group = list(
+                                                                               group = "sortGroup1", #'sortGroup1' allows the frames to communicate. different lists must have same name in order to drag and drop between them. cant drop into a diff group.
+                                                                               put = F, #prevents dropping anything into the time frames. e.g. u can drop movies inbetween time frames if dont have this. 
+                                                                               pull = "clone" #prevents dragging any timeframe out of the hall
+                                                                             ),
+                                                                             onSort = sortable_js_capture_input("sort_y") #leave here for my future ref
+                                                                           )),
+                                                      tags$div(class = "mdeets", id = "fdetails",
+                                                      tags$strong(icon("film"), name),
+                                                      style = "font-size: 15px",  tags$br(),
+                                                      paste0("Popularity: ", pops), tags$br(), paste0("Run time: ", as.integer(len)*15, "mins" ),
+                                                      
+                                                      
+                                                    )
                                                     )}
                                )
                           } #create any custom attribute with `data-`
@@ -262,7 +275,8 @@ ui <- fluidPage(
     period_id <- paste0("hall1period", i+1) #hall1period1 = first time of the day e.g. 11:00, hall1period2 = 11.15, so on so forth
     sortable_js(
       period_id,
-      options = sortable_options(     
+      options = sortable_options(    
+        animation = 0,
         group = list(group ="sortGroup1", 
                      
                      #'put' limits the cell to only take one element, preventing two movies from dropping into the same time slot
@@ -287,6 +301,7 @@ ui <- fluidPage(
     sortable_js(
       period_id,
       options = sortable_options(
+        animation = 0,
         group = list(group ="sortGroup1", 
                      put = htmlwidgets::JS("function (to) {return to.el.children.length < 1;}")),
                       onAdd = htmlwidgets::JS("function (evt) {onAddFunction2(evt);}" ),
@@ -301,6 +316,7 @@ ui <- fluidPage(
     sortable_js(
       period_id,
       options = sortable_options(
+        animation = 0,
         group = list(group ="sortGroup1", 
                      put = htmlwidgets::JS("function (to) {return to.el.children.length < 1;}")),
                       onAdd = htmlwidgets::JS("function (evt) {onAddFunction3(evt);}" ),
@@ -315,6 +331,7 @@ ui <- fluidPage(
     sortable_js(
       period_id,
       options = sortable_options(
+        animation = 0,
         group = list(group ="sortGroup1",
                      put = htmlwidgets::JS("function (to) {return to.el.children.length < 1;}")),
                       onAdd = htmlwidgets::JS("function (evt) {onAddFunction4(evt);}" ),
@@ -518,20 +535,22 @@ server <- function(input, output, session) {
   output$movieobjects<- renderUI({
     print ("im rendering movie objects")
     print (length(vals$mobjs))
-    tags$div(class = "panel-body", 
-             id = "movies", 
-             sortable_js("movies", #note the container id
-                          options = sortable_options(
-                           sort = FALSE, #prevents the list items from moving inside the container but still can interact
-                            group = list(
-                              pull = "clone", #clones the movie when we drag it
-                              name = "sortGroup1", #makes all the movies fall under sortGroup1. kinda like a category
-                              put = F #prevents dropping into the movie area
-                            ),
-                            onSort = sortable_js_capture_input("sort_vars") #technically useless jz leave here first for my referencing
-                          )
-                          ),
-             vals$mobjs)
+    # tags$div(class = "panel-body", 
+    #          id = "movies", 
+    #          sortable_js("movies", #note the container id
+    #                       options = sortable_options(
+    #                       #filter = ".panel-body",
+    #                        sort = FALSE, #prevents the list items from moving inside the container but still can interact
+    #                         group = list(
+    #                           pull = F, #clones the movie when we drag it
+    #                           name = "sortGroup1", #makes all the movies fall under sortGroup1. kinda like a category
+    #                           put = F #prevents dropping into the movie area
+    #                         ),
+    #                         onSort = sortable_js_capture_input("sort_vars") #technically useless jz leave here first for my referencing
+    #                       )
+    #                       ),
+    #          vals$mobjs)
+    vals$mobjs
   })
 }
 

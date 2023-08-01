@@ -5,8 +5,8 @@ function onAddFunction1(evt) {
     var rtind = parseInt(adind + 1);
     var cleanind = parseInt(adind + mlen + 1);
     var checking = 0;
-
-
+    console.log(evt.item)
+  
     for (var i = rtind; i < rtind + mlen + 1; i++) {
         entryCell = document.getElementById('hall1period' + i);
         if (i > 48) { break; }
@@ -15,7 +15,7 @@ function onAddFunction1(evt) {
 
     if (checking == 1) {  //if overlap, show warning pop up 
         alert('cannot place here. timing clash');
-        this.el.removeChild(evt.item);
+        evt.item.remove();
     } else {
         evt.to.style.backgroundColor = '#edd361'; //change colour to yellow for scheduled div
         evt.item.classList.add('scheduled'); //add scheduled class to div, for query when "run"
@@ -82,7 +82,7 @@ function onAddFunction2(evt) {
 
     };
 
-    if (checking == 1) { alert('cannot place here. timing clash'); this.el.removeChild(evt.item) }
+    if (checking == 1) { alert('cannot place here. timing clash'); evt.item.remove();}
     else {
         evt.to.style.backgroundColor = '#edd361';
         evt.item.classList.add('scheduled');
@@ -140,7 +140,7 @@ function onAddFunction3(evt) {
 
     };
 
-    if (checking == 1) { alert('cannot place here. timing clash'); this.el.removeChild(evt.item) }
+    if (checking == 1) { alert('cannot place here. timing clash'); evt.item.remove();}
     else {
         evt.to.style.backgroundColor = '#edd361';
         evt.item.classList.add('scheduled');
@@ -197,7 +197,7 @@ function onAddFunction4(evt) {
 
     };
 
-    if (checking == 1) { alert('cannot place here. timing clash'); this.el.removeChild(evt.item) }
+    if (checking == 1) { alert('cannot place here. timing clash');evt.item.remove(); }
     else {
         evt.to.style.backgroundColor = '#edd361';
         evt.item.classList.add('scheduled');
