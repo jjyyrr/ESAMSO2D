@@ -16,9 +16,10 @@ disp_conv <- function(x){name = x$MovieName;
                           len = x$RunTime; 
                           pops = x$Popularity;
                           pic = x$Pic;
+                          colstr=x$Color;
                           
                           lapply(name, function(name){tags$div(class = "mvcon", id = paste0("moviecon", name),
-                                                               tags$div(id = "banner", icon("compass"), `data-mlen` = len, `data-name` = name),
+                                                               tags$div(id = "banner", icon("compass"), `data-mlen` = len, `data-name` = name, `data-colstr` = colstr),
                                                                sortable_js(paste0("moviecon", name),  
                                                                            options = sortable_options(
                                                                              sort = F, #prevents movement of the time frames so u cant drag any of the frames.
