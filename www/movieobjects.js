@@ -5,7 +5,7 @@ function onAddFunction1(evt) {
     var rtind = parseInt(adind + 1);
     var cleanind = parseInt(adind + mlen + 1);
     var checking = 0;
-    console.log(evt.item)
+    console.log(evt)
   
     for (var i = rtind; i < rtind + mlen + 1; i++) {
         entryCell = document.getElementById('hall1period' + i);

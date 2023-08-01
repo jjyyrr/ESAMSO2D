@@ -15,6 +15,8 @@ source("moviemaker.R")
 disp_conv <- function(x){name = x$MovieName; 
                           len = x$RunTime; 
                           pops = x$Popularity;
+                          pic = x$Pic;
+                          
                           lapply(name, function(name){tags$div(class = "mvcon", id = paste0("moviecon", name),
                                                                tags$div(id = "banner", icon("compass"), `data-mlen` = len, `data-name` = name),
                                                                sortable_js(paste0("moviecon", name),  
