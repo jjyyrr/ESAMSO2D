@@ -1,12 +1,9 @@
 // on add function for hall 1
 function onAddFunction1(evt) {
     var mlen = parseInt(evt.item.dataset.mlen);
-    var rtcol = evt.item.dataset.colstr;
     var adind = parseInt(evt.to.id.split('hall1period')[1]);
-    var adcol = '#d93df5'
     var rtind = parseInt(adind + 1);
     var cleanind = parseInt(adind + mlen + 1);
-    var cleancol = '#a061ed'
     var checking = 0;
     console.log(evt)
   
@@ -21,14 +18,12 @@ function onAddFunction1(evt) {
         evt.item.remove();
     } else {
         evt.to.style.backgroundColor = '#edd361'; //change colour to yellow for scheduled div
-        evt.to.style.backgroundColor = adcol; //change colour to yellow for scheduled div
         evt.item.classList.add('scheduled'); //add scheduled class to div, for query when "run"
         evt.item.setAttribute('data-period', adind); //add period as attribute to read during "run"
         if (cleanind < 49) {
             var cleanframe = document.getElementById('1time' + cleanind);
             var cleancell = document.getElementById('hall1period' + cleanind);
             cleanframe.style.backgroundColor = '#a061ed'; //change colour to purple for cleaning
-            cleanframe.style.backgroundColor = cleancol; //change colour to purple for cleaning
             cleancell.style.display = 'none'; //remove the green cell
         }
         for (var i = rtind; i < rtind + mlen; i++) {
@@ -36,11 +31,9 @@ function onAddFunction1(evt) {
             var showframes = document.getElementById('1time' + i);
             var entryframe = document.getElementById('1time' + adind);
             entryframe.style.backgroundColor = '#d93df5'; //change colour to pink for ads
-            entryframe.style.backgroundColor = adcol ; //change colour to pink for ads
             if (i < 49) {
                 entryCell.style.display = 'none';
                 showframes.style.backgroundColor = '#7e88f2'; //change colour to blue for runtime
-                showframes.style.backgroundColor = rtcol; //runtime colour
             }
         }
     }
@@ -76,15 +69,11 @@ function onMoveFunction1(evt) {
 // on add function for hall 2
 function onAddFunction2(evt) {
     var mlen = parseInt(evt.item.dataset.mlen)
-    var mlen = parseInt(evt.item.dataset.mlen);
-    var rtcol = evt.item.dataset.colstr;
     var adind = parseInt(evt.to.id.split('hall2period')[1]);
-    var adcol = '#d93df5'
     var rtind = parseInt(adind + 1);
     var cleanind = parseInt(adind + mlen + 1);
-    var cleancol = '#a061ed'
     var checking = 0;
-  
+
 
     for (var i = rtind; i < rtind + mlen + 1; i++) {
         entryCell = document.getElementById('hall2period' + i);
@@ -93,23 +82,22 @@ function onAddFunction2(evt) {
 
     };
 
-<<<<<<< HEAD
     if (checking == 1) { alert('cannot place here. timing clash'); evt.item.remove();}
     else {
-        evt.to.style.backgroundColor = adcol;
+        evt.to.style.backgroundColor = '#edd361';
         evt.item.classList.add('scheduled');
         evt.item.setAttribute('data-period', adind);
         if (cleanind < 49) {
             var cleanframe = document.getElementById('2time' + cleanind);
             var cleancell = document.getElementById('hall2period' + cleanind);
-            cleanframe.style.backgroundColor = cleancol; cleancell.style.display = 'none'
+            cleanframe.style.backgroundColor = '#a061ed'; cleancell.style.display = 'none'
         };
         for (var i = rtind; i < rtind + mlen; i++) {
             var entryCell = document.getElementById('hall2period' + i);
             var showframes = document.getElementById('2time' + i);
             var entryframe = document.getElementById('2time' + adind);
-            entryframe.style.backgroundColor = adcol
-            if (i < 49) { entryCell.style.display = 'none'; showframes.style.backgroundColor = rtcol; };
+            entryframe.style.backgroundColor = '#d93df5'
+            if (i < 49) { entryCell.style.display = 'none'; showframes.style.backgroundColor = '#7e88f2'; };
         }
     }
 }
@@ -138,13 +126,10 @@ function onMoveFunction2(evt) {
 
 // on add function for hall 3
 function onAddFunction3(evt) {
-    var mlen = parseInt(evt.item.dataset.mlen);
-    var rtcol = evt.item.dataset.colstr;
+    var mlen = parseInt(evt.item.dataset.mlen)
     var adind = parseInt(evt.to.id.split('hall3period')[1]);
-    var adcol = '#d93df5'
     var rtind = parseInt(adind + 1);
     var cleanind = parseInt(adind + mlen + 1);
-    var cleancol = '#a061ed'
     var checking = 0;
 
 
@@ -155,23 +140,22 @@ function onAddFunction3(evt) {
 
     };
 
-<<<<<<< HEAD
     if (checking == 1) { alert('cannot place here. timing clash'); evt.item.remove();}
     else {
-        evt.to.style.backgroundColor = adcol;
+        evt.to.style.backgroundColor = '#edd361';
         evt.item.classList.add('scheduled');
         evt.item.setAttribute('data-period', adind);
         if (cleanind < 49) {
             var cleanframe = document.getElementById('3time' + cleanind);
             var cleancell = document.getElementById('hall3period' + cleanind);
-            cleanframe.style.backgroundColor = cleancol; cleancell.style.display = 'none'
+            cleanframe.style.backgroundColor = '#a061ed'; cleancell.style.display = 'none'
         };
         for (var i = rtind; i < rtind + mlen; i++) {
             var entryCell = document.getElementById('hall3period' + i);
             var showframes = document.getElementById('3time' + i);
             var entryframe = document.getElementById('3time' + adind);
-            entryframe.style.backgroundColor = adcol
-            if (i < 49) { entryCell.style.display = 'none'; showframes.style.backgroundColor = rtcol; };
+            entryframe.style.backgroundColor = '#d93df5'
+            if (i < 49) { entryCell.style.display = 'none'; showframes.style.backgroundColor = '#7e88f2'; };
         }
     }
 }
@@ -199,13 +183,10 @@ function onMoveFunction3(evt) {
 
 // on add function for hall 4
 function onAddFunction4(evt) {
-    var mlen = parseInt(evt.item.dataset.mlen);
-    var rtcol = evt.item.dataset.colstr;
+    var mlen = parseInt(evt.item.dataset.mlen)
     var adind = parseInt(evt.to.id.split('hall4period')[1]);
-    var adcol = '#d93df5'
     var rtind = parseInt(adind + 1);
     var cleanind = parseInt(adind + mlen + 1);
-    var cleancol = '#a061ed'
     var checking = 0;
 
 
@@ -216,23 +197,22 @@ function onAddFunction4(evt) {
 
     };
 
-<<<<<<< HEAD
     if (checking == 1) { alert('cannot place here. timing clash');evt.item.remove(); }
     else {
-        evt.to.style.backgroundColor = adcol;
+        evt.to.style.backgroundColor = '#edd361';
         evt.item.classList.add('scheduled');
         evt.item.setAttribute('data-period', adind);
         if (cleanind < 49) {
             var cleanframe = document.getElementById('4time' + cleanind);
             var cleancell = document.getElementById('hall4period' + cleanind);
-            cleanframe.style.backgroundColor = cleancol; cleancell.style.display = 'none'
+            cleanframe.style.backgroundColor = '#a061ed'; cleancell.style.display = 'none'
         };
         for (var i = rtind; i < rtind + mlen; i++) {
             var entryCell = document.getElementById('hall4period' + i);
             var showframes = document.getElementById('4time' + i);
             var entryframe = document.getElementById('4time' + adind);
-            entryframe.style.backgroundColor = adcol
-            if (i < 49) { entryCell.style.display = 'none'; showframes.style.backgroundColor = rtcol; };
+            entryframe.style.backgroundColor = '#d93df5'
+            if (i < 49) { entryCell.style.display = 'none'; showframes.style.backgroundColor = '#7e88f2'; };
         }
     }
 }
@@ -263,7 +243,7 @@ function getScheduledData() {
 
     // Query elements with class "scheduled"
     var scheduledElements = document.getElementsByClassName("scheduled");
-    console.log(scheduledElements)
+
     // Loop through each element and get custom attributes
     var dataArr = [];
     for (var i = 0; i < scheduledElements.length; i++) {
