@@ -1,5 +1,6 @@
 ### main code
 library(shiny)
+library(jsonlite)
 library(htmlwidgets)
 library(sortable)
 library(magrittr)
@@ -17,6 +18,8 @@ len = x$RunTime;
 pops = x$Popularity;
 pic = x$Pic;
 colstr=x$Color;
+cost=x$Cost;
+endingday=x$EndingDate;
 lapply(name, function(name){tags$div(class = "mvcon", id = paste0("moviecon", name),
                                      tags$div(id = "banner", tags$img(src=pic, style = "width: 100%"), `data-mlen` = len, `data-name` = name, `data-colstr` = colstr),
                                      sortable_js(paste0("moviecon", name),  
@@ -33,8 +36,10 @@ lapply(name, function(name){tags$div(class = "mvcon", id = paste0("moviecon", na
                                      tags$div(class = "mdeets", id = "fdetails",
                                               tags$strong(icon("film"), name),
                                               style = "font-size: 15px",  tags$br(),
-                                              paste0("Popularity: ", pops," stars"), tags$br(), paste0("Run time: ", as.integer(len)*15, "mins" ),
-                                              
+                                              paste0("Popularity: ", pops," stars"), tags$br(), 
+                                              paste0("Run time: ", as.integer(len)*15, " mins" ),tags$br(),
+                                              paste0("Cost: $: ", cost), tags$br(),
+                                              paste0("Ending on day: ", endingday)
                                               
                                      )
 )}
@@ -55,41 +60,17 @@ ui <- fluidPage(
             tags$script(src = "movieobjects.js")),
   
   fluidRow(class = "panel panel-heading",
+<<<<<<< Updated upstream
            style="background-image: url('CinemaBaseUILong.png');
     background-size: cover;
     width: auto;height: auto; background-position: absolute;",
+=======
+           #style="background-image: url('CinemaBaseUILong.png'); background-size: 100% auto ; background-repeat: no-repeat; background-position: center;",
+>>>>>>> Stashed changes
            div(class = "panel-heading",
                h3(style = "padding: 20px; color: #FFFFFF; text-align: center;", "I like to Movie Movie"),
            ),
-           fluidRow(column(width = 2,
-                               tags$div(class = "panel panel-default",
-                                        tags$div(class = "panel-heading", icon("user"), tags$strong("Username") ), #makes it bold
-                                        textOutput("loggedInAs"),
-                                        
-                               )
-                        ),
-                        column(width = 2,
-                               tags$div(class = "panel panel-default",
-                                        tags$div(class = "panel-heading", icon("calendar-days"), tags$strong("Day") ), #makes it bold
-                                        textOutput("day")
-                                        
-                               )
-                        ),
-                        column(width = 2,
-                               tags$div(class = "panel panel-default",
-                                        tags$div(class = "panel-heading", icon("sack-dollar"), tags$strong("Cash balance") ), #makes it bold
-                                        textOutput("cash")
-                                        
-                               )
-                        ),
-                        column(width = 2,
-                               tags$div(class = "panel panel-default",
-                                        tags$div(class = "panel-heading", icon("ticket"), tags$strong("Ticket prices") ), #makes it bold
-                                        textOutput("ticketprices")
-                                        
-                               )
-                        )),
-           
+        
            
            
            sidebarPanel(class = "panel-body", width = 2,
@@ -99,6 +80,7 @@ ui <- fluidPage(
                          #      textOutput("day"),
                          #      textOutput("cash")# TODO add the cash on hand here
                         #),
+                        
                         
                         #Movie list container
                         column(width = 12,
@@ -128,16 +110,48 @@ ui <- fluidPage(
                                         )
                                )
                         ),
+                        column(width = 12,actionButton("pastdata", "Past Data",style={"width: 100%; background-color:#337ab7; color: white; font-weight: bold"})),
+                        
                         
                         #Run button
-                        column(width = 12,actionButton("pastdata", "data")),
-                        column(width = 12,actionButton("run", "RUN")),
+                        column(width = 12,actionButton("run", "RUN",style={"width: 100%; background-color:#00A86B;color: white;font-weight: bold"})),
                         
                         
            ), #bracket for closing sidebarPanel
            
            #main ui area
            mainPanel(
+             
+             fluidRow(
+               column(width = 3,
+                      tags$div(class = "panel panel-default",
+                               tags$div(class = "panel-heading", icon("user"), tags$strong("Username") ), #makes it bold
+                               textOutput("loggedInAs"),
+                               
+                      )
+               ),
+             column(width = 3,
+                    tags$div(class = "panel panel-default",
+                             tags$div(class = "panel-heading", icon("calendar-days"), tags$strong("Day") ), #makes it bold
+                             textOutput("day")
+                             
+                    )
+             ),
+             column(width = 3,
+                    tags$div(class = "panel panel-default",
+                             tags$div(class = "panel-heading", icon("sack-dollar"), tags$strong("Cash balance") ), #makes it bold
+                             textOutput("cash")
+                             
+                    )
+             ),
+             column(width = 3,
+                    tags$div(class = "panel panel-default",
+                             tags$div(class = "panel-heading", icon("ticket"), tags$strong("Ticket prices") ), #makes it bold
+                             textOutput("ticketprices")
+                             
+                    )
+             ),
+),
              
              #Hall 1
              column(tags$style(HTML(".hall-body {min-height: 500px;}")),
@@ -356,16 +370,15 @@ server <- function(input, output, session) {
   observeEvent(input$register, {
     removeModal() #remove startupModal
     vals$randomName <- GenerateName()
-    print(vals$randomName)
     showModal(registerModal(vals$randomName,failed=FALSE))
   })
   
   #skip button
-  #observeEvent(input$skip, {
-  #  removeModal() #remove start up modal
-  #  vals$movielist<-generatemlist(1)
-  #  vals$mobjs<-generateMobjs(vals$movielist) #generate movie list
-  #})
+  observeEvent(input$skip, {
+    removeModal() #remove start up modal
+    vals$movielist<-generatemlist(1)
+    vals$mobjs<-generateMobjs(vals$movielist) #generate movie list
+  })
   
   #Generate Button
   observeEvent(input$generate, {
@@ -469,24 +482,34 @@ server <- function(input, output, session) {
   
   # RUN button
   observeEvent(input$run, {
-    #scheduled <- htmlwidgets::JS('getScheduledData()') #TODO: read HTML data for movie timings for calculations
-    
-    scheduled <- read.csv("scheduled.csv")
-    #append data dataframe
-    result <- calculate(scheduled,vals$day) #returns adrev, tix rev, rental cost, profit
-    
-    vals$resultsdf <- rbind(vals$resultsdf, result)
-    vals$cash<-vals$cash + result[["Profits"]] #add profit to cash balance
-    showModal(resultboardModal())
+    runjs("getScheduledData()")
     
     if (vals$day == 14) {
       updateActionButton(session, "nextday", label = "View leaderboard")
       vals$gameEnded <- TRUE
     }
   
-    
   })
   
+  
+  observeEvent(input$jsoutput, {
+    df<-data.frame(input$jsoutput)
+    
+    scheduled <- data.frame(
+      movie = df$input.jsoutput[c(TRUE, FALSE)],
+      period = df$input.jsoutput[c(FALSE, TRUE)]
+    )
+    
+    #scheduled <- read.csv("scheduled.csv")
+    #append data dataframe
+    result <- calculate(scheduled,vals$day) #returns adrev, tix rev, rental cost, profit
+    
+    vals$resultsdf <- rbind(vals$resultsdf, result)
+    vals$cash<-vals$cash + result[["Profits"]] #add profit to cash balance
+    showModal(resultboardModal())
+  })
+    
+    
   # Next day button
   observeEvent(input$nextday, {
     removeModal() #remove summary page
@@ -519,6 +542,8 @@ server <- function(input, output, session) {
     
     if (vals$day ==9){ 
       showModal(day9modal())
+      #remove scheduled mission possible
+      runjs("clearday9()")
     }
     if (vals$day ==12){ 
       showModal(day12modal())
@@ -530,6 +555,8 @@ server <- function(input, output, session) {
   observeEvent(input$restart, {
     updateActionButton(session, "nextday", label = "Next day >")
     removeModal() # Close the summary page modal
+    
+    runjs("cleartimetable()")
     
     #load initial conditions
     vals$cash<- 10000

@@ -36,7 +36,7 @@ startUpModal <- function() {
     footer = tagList(
       actionButton("register", "Register"),
       actionButton("login", "Login"),
-      #actionButton("skip", "Skip")
+      actionButton("skip", "Skip")
     )
     
   )
@@ -47,9 +47,9 @@ startUpModal <- function() {
 GenerateName <- function(){
   conn <- getAWSConnection()
   
-  adj<-query("SELECT word FROM RandomWords WHERE adj=1 ORDER BY RAND() LIMIT 1")
-  col<-query("SELECT word FROM RandomWords WHERE adj=2 ORDER BY RAND() LIMIT 1")
-  ani<-query("SELECT word FROM RandomWords WHERE adj=3 ORDER BY RAND() LIMIT 1")
+  adj<-dbGetQuery(conn,"SELECT word FROM RandomWords WHERE adj=1 ORDER BY RAND() LIMIT 1")
+  col<-dbGetQuery(conn,"SELECT word FROM RandomWords WHERE adj=2 ORDER BY RAND() LIMIT 1")
+  ani<-dbGetQuery(conn,"SELECT word FROM RandomWords WHERE adj=3 ORDER BY RAND() LIMIT 1")
   
   dbDisconnect(conn)
   

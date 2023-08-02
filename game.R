@@ -27,7 +27,7 @@ calculateRentalCost <- function(tab){#table of movie and count
     conn <- getAWSConnection()
     querytemplate <- "SELECT Cost FROM MoviesDB WHERE MovieName=?name"
     queryString<- sqlInterpolate(conn, querytemplate,name=name)
-    queryoutput<-query(queryString)
+    queryoutput<-dbGetQuery(conn,queryString)
     dbDisconnect(conn)
 
     cost<- cost+ tab[[name]]*queryoutput[["Cost"]]
@@ -48,7 +48,7 @@ calculateDemandCoeff <- function(period,day){
   }
   
   queryString<- sqlInterpolate(conn, querytemplate,period=period)
-  queryoutput<-query(queryString)
+  queryoutput<-dbGetQuery(conn,queryString)
   dbDisconnect(conn)
   
   queryoutput[[1]]
@@ -59,7 +59,7 @@ calculateReleaseCoeff <- function(movie,day){
   conn <- getAWSConnection()
   querytemplate <- "SELECT EndingDate FROM MoviesDB WHERE MovieName=?name"
   queryString<- sqlInterpolate(conn, querytemplate,name=movie)
-  queryoutput<-query(queryString)
+  queryoutput<-dbGetQuery(conn,queryString)
   dbDisconnect(conn)
   endingday<-queryoutput[["EndingDate"]]
   
@@ -75,7 +75,7 @@ calculateRatingsCoeff <- function(name){
   conn <- getAWSConnection()
   querytemplate <- "SELECT Popularity FROM MoviesDB WHERE MovieName=?name"
   queryString<- sqlInterpolate(conn, querytemplate,name=name)
-  queryoutput<-query(queryString)
+  queryoutput<-dbGetQuery(conn,queryString)
   dbDisconnect(conn)
   
   ratingscoeff<- 0.125*queryoutput[["Popularity"]] + 0.375
@@ -94,7 +94,7 @@ calculateTicketsRevenue <- function(scheduled,day){
   }
   
   queryString2<- sqlInterpolate(conn, querytemplate2,name=movie)
-  demandmodel<-query(queryString2)
+  demandmodel<-dbGetQuery(conn,queryString2)
   
   for (movie in unique(scheduled[,"movie"])){
     
@@ -103,7 +103,7 @@ calculateTicketsRevenue <- function(scheduled,day){
     
     querytemplate1 <- "SELECT Dailydemand FROM MoviesDB WHERE MovieName=?name"
     queryString1<- sqlInterpolate(conn, querytemplate1,name=movie)
-    queryoutput1<-query(queryString1)
+    queryoutput1<-dbGetQuery(conn,queryString1)
     
     dd<-queryoutput1[["Dailydemand"]]
     
@@ -141,10 +141,5 @@ calculate<- function(scheduled,day){
   
   #return cost, rental(permovie or total?), tickets revenue(breakdown of tix per show? breakdown of revenue per movie?)
   result<- data.frame(Day = day, AdRevenue = AdRevenue, TicketsRevenue = TicketsRevenue, RentalCost=RentalCost, Profits=Profit)
-  print(result)
   result
 }
-
-
-
-scheduled<-read.csv("scheduled.csv")

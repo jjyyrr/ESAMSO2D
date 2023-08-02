@@ -17,13 +17,6 @@ getAWSConnection <- function(){
   conn
 }
 
-query <- function(queryString){
-  conn <- getAWSConnection()
-  result <- dbGetQuery(conn,queryString)
-  dbDisconnect(conn)
-  result
-}
-
 generatemlist <- function(day){
   
   conn <- getAWSConnection()

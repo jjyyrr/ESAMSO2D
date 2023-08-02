@@ -2,14 +2,15 @@
 function onAddFunction1(evt) {
     var mlen = parseInt(evt.item.dataset.mlen);
     var rtcol = evt.item.dataset.colstr;
+    var moviename = evt.item.dataset.name;
     var adind = parseInt(evt.to.id.split('hall1period')[1]);
     var adcol = '#F6EFA6'
     var rtind = parseInt(adind + 1);
     var cleanind = parseInt(adind + mlen + 1);
-    var cleancol = '#a061ed'
+    var cleancol = '#BDADEA'
     var checking = 0;
-    console.log(evt)
-
+    
+    console.log(moviename)
     for (var i = rtind; i < rtind + mlen + 1; i++) {
         entryCell = document.getElementById('hall1period' + i);
         if (i > 48) { break; }
@@ -23,6 +24,7 @@ function onAddFunction1(evt) {
     } else {
         evt.to.style.backgroundColor = adcol; //change colour to yellow for scheduled div
         evt.item.classList.add('scheduled'); //add scheduled class to div, for query when "run"
+
         evt.item.setAttribute('data-period', adind); //add period as attribute to read during "run"
         if (cleanind < 49) {
             var cleanframe = document.getElementById('1time' + cleanind);
@@ -75,10 +77,10 @@ function onAddFunction2(evt) {
     var mlen = parseInt(evt.item.dataset.mlen);
     var rtcol = evt.item.dataset.colstr;
     var adind = parseInt(evt.to.id.split('hall2period')[1]);
-    var adcol = '#d93df5'
+    var adcol = '#F6EFA6'
     var rtind = parseInt(adind + 1);
     var cleanind = parseInt(adind + mlen + 1);
-    var cleancol = '#a061ed'
+    var cleancol = '#BDADEA'
     var checking = 0;
   
 
@@ -136,10 +138,10 @@ function onAddFunction3(evt) {
     var mlen = parseInt(evt.item.dataset.mlen);
     var rtcol = evt.item.dataset.colstr;
     var adind = parseInt(evt.to.id.split('hall3period')[1]);
-    var adcol = '#d93df5'
+    var adcol = '#F6EFA6'
     var rtind = parseInt(adind + 1);
     var cleanind = parseInt(adind + mlen + 1);
-    var cleancol = '#a061ed'
+    var cleancol = '#BDADEA'
     var checking = 0;
 
 
@@ -196,10 +198,10 @@ function onAddFunction4(evt) {
     var mlen = parseInt(evt.item.dataset.mlen);
     var rtcol = evt.item.dataset.colstr;
     var adind = parseInt(evt.to.id.split('hall4period')[1]);
-    var adcol = '#d93df5'
+    var adcol = '#F6EFA6'
     var rtind = parseInt(adind + 1);
     var cleanind = parseInt(adind + mlen + 1);
-    var cleancol = '#a061ed'
+    var cleancol = '#BDADEA'
     var checking = 0;
 
 
@@ -214,6 +216,7 @@ function onAddFunction4(evt) {
     else {
         evt.to.style.backgroundColor = adcol;
         evt.item.classList.add('scheduled');
+
         evt.item.setAttribute('data-period', adind);
         if (cleanind < 49) {
             var cleanframe = document.getElementById('4time' + cleanind);
@@ -253,21 +256,54 @@ function onMoveFunction4(evt) {
 
 // for querying scheduled class when "run" button is clicked
 function getScheduledData() {
-
     // Query elements with class "scheduled"
     var scheduledElements = document.getElementsByClassName("scheduled");
-    console.log(scheduledElements)
+    
     // Loop through each element and get custom attributes
     var dataArr = [];
     for (var i = 0; i < scheduledElements.length; i++) {
         var element = scheduledElements[i];
-        var dataName = element.getAttribute("data-name");
-        var dataPeriod = element.getAttribute("data-period");
+        var dataName = (element.dataset.name);
+        var dataPeriod = (element.dataset.period);
 
         // Push the data into the array
         dataArr.push({ name: dataName, period: dataPeriod });
     }
 
-    return dataArr;
+    Shiny.setInputValue("jsoutput", dataArr);
 }
 
+
+
+// for removing mission possible on day 9
+
+function clearday9() {
+    var scheduledElements = document.getElementsByClassName("scheduled");
+    
+    for (var i = 0; i < scheduledElements.length; i++) {
+      var element = scheduledElements[i];
+      if(element.dataset.name=="Mission Possible"){
+        element.remove()
+          //fill in code here to reomove
+        }
+
+    }
+
+}
+
+
+/*
+// for removing clearing timetable on restart
+// for removing mission possible on day 9
+
+function cleartimetable() {
+    var scheduledElements = document.getElementsByClassName("scheduled");
+    
+    for (var i = 0; i < scheduledElements.length; i++) {
+      element[i].remove()
+        // code for removing element and resetting colout
+
+    }
+
+}
+*/
