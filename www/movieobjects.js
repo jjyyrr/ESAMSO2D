@@ -3,7 +3,7 @@ function onAddFunction1(evt) {
     var mlen = parseInt(evt.item.dataset.mlen);
     var rtcol = evt.item.dataset.colstr;
     var adind = parseInt(evt.to.id.split('hall1period')[1]);
-    var adcol = '#d93df5'
+    var adcol = '#F6EFA6'
     var rtind = parseInt(adind + 1);
     var cleanind = parseInt(adind + mlen + 1);
     var cleancol = '#a061ed'
@@ -17,7 +17,7 @@ function onAddFunction1(evt) {
     }
 
     if (checking == 1) {  //if overlap, show warning pop up 
-        alert('cannot place here. timing clash');
+        alert('Cannot Place Here! Timing Clashes!');
         evt.item.remove();
         /*this.el.removeChild(evt.item);*/
     } else {
@@ -89,7 +89,7 @@ function onAddFunction2(evt) {
 
     };
 
-    if (checking == 1) { alert('cannot place here. timing clash'); evt.item.remove(); }
+    if (checking == 1) { alert('Cannot Place Here! Timing Clashes!'); evt.item.remove(); }
     else {
         evt.to.style.backgroundColor = adcol;
         evt.item.classList.add('scheduled');
@@ -150,7 +150,7 @@ function onAddFunction3(evt) {
 
     };
 
-    if (checking == 1) { alert('cannot place here. timing clash'); evt.item.remove(); }
+    if (checking == 1) { alert('Cannot Place Here! Timing Clashes!'); evt.item.remove(); }
     else {
         evt.to.style.backgroundColor = adcol;
         evt.item.classList.add('scheduled');
@@ -210,7 +210,7 @@ function onAddFunction4(evt) {
 
     };
 
-    if (checking == 1) { alert('cannot place here. timing clash'); evt.item.remove(); }
+    if (checking == 1) { alert('Cannot Place Here! Timing Clashes!'); evt.item.remove(); }
     else {
         evt.to.style.backgroundColor = adcol;
         evt.item.classList.add('scheduled');

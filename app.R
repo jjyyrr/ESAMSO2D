@@ -9,66 +9,94 @@ library(tidyverse)
 
 source("loginFns.R")
 source("moviemaker.R")
-#one more for calculations
-#one more for leaderboard
+source("game.R")
+source("gamemodals.R")
 
 disp_conv <- function(x){name = x$MovieName; 
-                          len = x$RunTime;
-                          colstr=x$Color;
-                          
-                          lapply(name, function(name){tags$div(
-                                                      icon("film", style = "font-size: 15px"),
-                                                      style = "font-size: 15px",
-                                                      tags$strong(name),
-                                                      paste0("(", as.integer(len)*15, "mins)" ),
-                                                      `data-mlen` = len,
-                                                      `data-name` = name,
-                                                      `data-colstr` = colstr
-                                                    )}
-                               )
-                          } #create any custom attribute with `data-`
+len = x$RunTime; 
+pops = x$Popularity;
+pic = x$Pic;
+colstr=x$Color;
+lapply(name, function(name){tags$div(class = "mvcon", id = paste0("moviecon", name),
+                                     tags$div(id = "banner", tags$img(src=pic, style = "width: 100%"), `data-mlen` = len, `data-name` = name, `data-colstr` = colstr),
+                                     sortable_js(paste0("moviecon", name),  
+                                                 options = sortable_options(
+                                                   sort = F, #prevents movement of the time frames so u cant drag any of the frames.
+                                                   filter = '.mdeets', #prevents interaction with the time frames totally. makes them look like a static object.
+                                                   group = list(
+                                                     group = "sortGroup1", #'sortGroup1' allows the frames to communicate. different lists must have same name in order to drag and drop between them. cant drop into a diff group.
+                                                     put = F, #prevents dropping anything into the time frames. e.g. u can drop movies inbetween time frames if dont have this. 
+                                                     pull = "clone" #prevents dragging any timeframe out of the hall
+                                                   ),
+                                                   onSort = sortable_js_capture_input("sort_y") #leave here for my future ref
+                                                 )),
+                                     tags$div(class = "mdeets", id = "fdetails",
+                                              tags$strong(icon("film"), name),
+                                              style = "font-size: 15px",  tags$br(),
+                                              paste0("Popularity: ", pops," stars"), tags$br(), paste0("Run time: ", as.integer(len)*15, "mins" ),
+                                              
+                                              
+                                     )
+)}
+)
+}
 
 generateMobjs <- function(movielist){
   Mobjs <- list()
-  print("i am generating Mobjs")
-  print(length(movielist))
   for(i in 1:length(movielist)){Mobjs[i] <- disp_conv(movielist[[i]])}
-  print(length(Mobjs))
   Mobjs
 }
 
-resultsModal <- function() {
-  modalDialog(
-    as.integer(runif(1,1,100)),
-    footer = actionButton("nextday", "Next day >")# TODO: button should increase day counter by 1
-  )
-}
 
-leaderboardModal <- function() {
-  modalDialog(
-    title = "Leaderboard",
-    "Your performance: ",
-    easyClose = FALSE,
-    footer = actionButton("restart", label = "Restart?")
-  )
-}
 
 ui <- fluidPage(
   useShinyjs(),
   tags$head(includeCSS("www/styles.css"),
             tags$script(src = "movieobjects.js")),
+  
   fluidRow(class = "panel panel-heading",
            style="background-image: url('CinemaBaseUILong.png'); background-size: 100% 100%; background-repeat: no-repeat; background-position: center;",
            div(class = "panel-heading",
-               h3(style = "padding: 20px; color: #FFFFFF; text-align: center;", "I like to Movie Movie")
+               h3(style = "padding: 20px; color: #FFFFFF; text-align: center;", "I like to Movie Movie"),
            ),
-           sidebarPanel(class = "panel-body",width = 2,
-                        
-                        column(width = 12,
-                               textOutput("loggedInAs"),
-                               textOutput("day"),
-                               textOutput("cash")# TODO add the cash on hand here
+           fluidRow(column(width = 2,
+                               tags$div(class = "panel panel-default",
+                                        tags$div(class = "panel-heading", icon("user"), tags$strong("Username") ), #makes it bold
+                                        textOutput("loggedInAs"),
+                                        
+                               )
                         ),
+                        column(width = 2,
+                               tags$div(class = "panel panel-default",
+                                        tags$div(class = "panel-heading", icon("calendar-days"), tags$strong("Day") ), #makes it bold
+                                        textOutput("day")
+                                        
+                               )
+                        ),
+                        column(width = 2,
+                               tags$div(class = "panel panel-default",
+                                        tags$div(class = "panel-heading", icon("sack-dollar"), tags$strong("Cash balance") ), #makes it bold
+                                        textOutput("cash")
+                                        
+                               )
+                        ),
+                        column(width = 2,
+                               tags$div(class = "panel panel-default",
+                                        tags$div(class = "panel-heading", icon("ticket"), tags$strong("Ticket prices") ), #makes it bold
+                                        textOutput("ticketprices")
+                                        
+                               )
+                        )),
+           
+           
+           
+           sidebarPanel(class = "panel-body", width = 2,
+                        
+                        #column(width = 12+
+                         #        textOutput("loggedInAs"),
+                         #      textOutput("day"),
+                         #      textOutput("cash")# TODO add the cash on hand here
+                        #),
                         
                         #Movie list container
                         column(width = 12,
@@ -76,18 +104,6 @@ ui <- fluidPage(
                                         tags$div(class = "panel-heading", icon("film"), tags$strong("Movies") ), #makes it bold
                                         uiOutput("movieobjects")
                                         
-                               )
-                        ),
-                        
-                        #Legend container
-                        column(width = 12,
-                               tags$div(class = "panel panel-default",
-                                        tags$div(class = "panel-heading", icon("compass"), tags$strong("Legend")),
-                                        tags$div(class = "panel-body", id = "legend",
-                                                 tags$div(class = "ad", id = "ad", "Advertisements"),
-                                                 tags$div(class = "clean", id = "clean", "Cleaning"),
-                                                 textOutput("ticketprices") #TODO: make this change when it is weekend/PH
-                                        )
                                )
                         ),
                         
@@ -99,7 +115,20 @@ ui <- fluidPage(
                                )
                         ),
                         
+                        #Legend container
+                        column(width = 12,
+                               tags$div(class = "panel panel-default",
+                                        tags$div(class = "panel-heading", icon("compass"), tags$strong("Legend")),
+                                        tags$div(class = "panel-body", id = "legend",
+                                                 tags$div(class = "ad", id = "ad", "Advertisements"),
+                                                 tags$div(class = "clean", id = "clean", "Cleaning"),
+                                                 #textOutput("ticketprices") #TODO: make this change when it is weekend/PH
+                                        )
+                               )
+                        ),
+                        
                         #Run button
+                        column(width = 12,actionButton("pastdata", "data")),
                         column(width = 12,actionButton("run", "RUN")),
                         
                         
@@ -169,22 +198,6 @@ ui <- fluidPage(
              ),
            ) #bracket for closing mainPanel
   ),#bracket for closing fluid row
-  
-  
-  #making the legend. technically such a run around way but my brain was too tired to think properly. had to make 3 classes in the ui side lol.
-                      #technically we dont need this block of code, but I shall leave it in here just for the lols - melvin
-  
-  sortable_js("legend", 
-              options = sortable_options(
-                sort = FALSE,
-                filter = list('.ad', '.run', '.clean'),
-                group = list(
-                  pull = F,
-                  name = "sortGroup2",
-                  put = F
-                )
-              )
-  ),
   
   #makes the hall a sortable list. this list is for the time frames NOT the entry cells.
   
@@ -329,7 +342,7 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
   # reactiveValues object for storing items like the user password
-  vals <- reactiveValues(randomName=NULL, password = NULL, playerid=NULL, playername=NULL, gamevariantid=1, score=NULL, day=1, gameEnded=F, cash=10000, mobjs=NULL)
+  vals <- reactiveValues(randomName=NULL, password = NULL, playerid=NULL, playername=NULL, gamevariantid=1, score=NULL, day=0, gameEnded=F, cash=0, mobjs=NULL, resultsdf=NULL)
   
   
   #show modal on startup
@@ -346,15 +359,14 @@ server <- function(input, output, session) {
   })
   
   #skip button
-  observeEvent(input$skip, {
-    removeModal() #remove start up modal
-    vals$movielist<-generatemlist(1)
-    vals$mobjs<-generateMobjs(vals$movielist) #generate movie list
-  })
+  #observeEvent(input$skip, {
+  #  removeModal() #remove start up modal
+  #  vals$movielist<-generatemlist(1)
+  #  vals$mobjs<-generateMobjs(vals$movielist) #generate movie list
+  #})
   
   #Generate Button
   observeEvent(input$generate, {
-    print("generating")
     vals$randomName <- GenerateName()
   })
   
@@ -370,8 +382,8 @@ server <- function(input, output, session) {
       if (!is.null(vals$playername)){
           vals$playerid <- getPlayerID(vals$playername,vals$password)
       }
-
       removeModal()
+      showModal(postLoginModal())
     } else {
       showModal(registerModal(failed = TRUE))
     }
@@ -392,10 +404,6 @@ server <- function(input, output, session) {
       #store the playerid and playername and close the dialog
       vals$playerid <- playerid
       vals$playername <- input$playername
-      
-      #TODO:load initial conditions
-      vals$movielist<-generatemlist(1)
-      vals$mobjs<-generateMobjs(vals$movielist) #generate movie list
 
       removeModal() #remove login modal
       showModal(postLoginModal())
@@ -405,36 +413,20 @@ server <- function(input, output, session) {
     }
   })
   
-  # Tutorial Button
-  observeEvent(input$tutorial, {
-    removeModal() #remove post-login modal
-    # TODO: Insert Tutorial modal here
-  })
-  
-  observeEvent(input$startgame, {
-    removeModal() #remove tutorial modal
-    
-    #TODO:load initial conditions
-    vals$movielist<-generatemlist(1)
-    vals$mobjs<-generateMobjs(vals$movielist) #generate movie list
-  })
-  
-  
   #  Change PW button
   observeEvent(input$changepw, {
     showModal(changepwModal(vals$playername,FALSE,FALSE))
   })
   
-  # confirm change button (in Change PW modal)
+  # Confirm change button (in Change PW modal)
   observeEvent(input$confirmchange, {
-    # Get the playerID and check if it is valid
-    playerid <- getPlayerID(input$playername,input$password4)
+    playerid <- getPlayerID(input$playername,input$passwordcurrent)
     
     if (playerid>0) {
-      if(input$password5 == input$password6){
-        changePwQuery(input$playername,input$password4,input$password6)
+      if(input$passwordnew1 == input$passwordnew2){
+        changePwQuery(input$playername,input$passwordcurrent,input$passwordnew1)
         removeModal()
-        showModal(successfulchangeModal())
+        showModal(postLoginModal())
       }else{showModal(changepwModal(vals$playername,FALSE,TRUE))} # if 2 new pw dont match
       
     } else {
@@ -442,13 +434,48 @@ server <- function(input, output, session) {
     }
   })
   
+  # Tutorial Button
+  observeEvent(input$tutorial, {
+    removeModal() #remove post-login modal
+    showModal(tutorialModal())
+  })
+  
+  # Start game button (in post login modal and tutorial modal)
+  observeEvent(input$startgame, {
+    removeModal() #remove tutorial modal
+    
+    #load initial conditions
+    vals$cash<- 10000
+    vals$day<-1
+    vals$movielist<-generatemlist(1)
+    vals$mobjs<-generateMobjs(vals$movielist) #generate movie list
+    vals$resultsdf <- data.frame(
+      Day = integer(),
+      AdRevenue= numeric(),
+      TicketsRevenue = numeric(),
+      RentalCost = numeric(),
+      Profits = numeric(),
+      stringsAsFactors = FALSE
+    )
+  })
+  
+  # Tutorial Button
+  observeEvent(input$pastdata, {
+    removeModal() #remove post-login modal
+    showModal(pastdataModal())
+  })
+  
   # RUN button
   observeEvent(input$run, {
-    dataArr <- htmlwidgets::JS('getScheduledData()') #TODO: read HTML data for movie timings for calculations
-    print(dataArr)
-    #results <- calculate(dataArr)
-    #update cash balance
-    showModal(resultsModal())
+    #scheduled <- htmlwidgets::JS('getScheduledData()') #TODO: read HTML data for movie timings for calculations
+    
+    scheduled <- read.csv("scheduled.csv")
+    #append data dataframe
+    result <- calculate(scheduled,vals$day) #returns adrev, tix rev, rental cost, profit
+    
+    vals$resultsdf <- rbind(vals$resultsdf, result)
+    vals$cash<-vals$cash + result[["Profits"]] #add profit to cash balance
+    showModal(resultboardModal())
     
     if (vals$day == 14) {
       updateActionButton(session, "nextday", label = "View leaderboard")
@@ -458,12 +485,14 @@ server <- function(input, output, session) {
     
   })
   
-  # next day button
+  # Next day button
   observeEvent(input$nextday, {
     removeModal() #remove summary page
     
     if (vals$gameEnded) {
-      showModal(leaderboardModal())
+      publishscore(vals$playername,vals$cash)
+      showModal(leaderboardModal(vals$cash))
+      
     }
     
     vals$day <- vals$day+1
@@ -472,17 +501,56 @@ server <- function(input, output, session) {
       vals$movielist<-generatemlist(vals$day)
       vals$mobjs<-generateMobjs(vals$movielist)
     }
+    
+    if (vals$day ==2){ 
+      showModal(day2modal())
+    }
+    if (vals$day ==4){ 
+      showModal(day4modal())
+    }
+    if (vals$day ==6){ 
+      showModal(day6modal())
+    }
+    if (vals$day ==8){ 
+      showModal(day8modal())
+    }
+    
+    if (vals$day ==9){ 
+      showModal(day9modal())
+    }
+    if (vals$day ==12){ 
+      showModal(day12modal())
+    }
+    
   })
   
+  #restart button
   observeEvent(input$restart, {
-    # TODO: LOAD INITIAL CONDITIONS (cash = 10k, reset movies, bla bla bla)
-    vals$day <- 1
-    vals$gameEnded <- FALSE
     updateActionButton(session, "nextday", label = "Next day >")
     removeModal() # Close the summary page modal
+    
+    #load initial conditions
+    vals$cash<- 10000
+    vals$movielist<-generatemlist(1)
+    vals$day<-1
+    vals$mobjs<-generateMobjs(vals$movielist) #generate movie list
+    vals$resultsdf <- data.frame(
+      Day = numeric(),
+      AdRevenue = numeric(),
+      TicketsRevenue = numeric(),
+      RentalCost = numeric(),
+      Profits = numeric(),
+      stringsAsFactors = FALSE
+    )
+    vals$gameEnded<-FALSE
   })
   
 ############### Output render ####################
+  
+  #generating random name for registration
+  output$randomname <- renderText({
+    paste(vals$randomName)
+  })
   
   # Display name 
   output$loggedInAs <- renderText({
@@ -510,34 +578,34 @@ server <- function(input, output, session) {
   #ticket prices
   output$ticketprices <- renderText({
     if (vals$day %in% c(6,7,12,13,14)) {
-      paste("$", 10, "/ticket")
+      paste("$",10, "/ticket")
     } else {
-      paste("$", 7, "/ticket")
+      paste("$",7, "/ticket")
     }
   })
   
   
   #movie objects
   output$movieobjects<- renderUI({
-    print ("im rendering movie objects")
-    print (length(vals$mobjs))
-    tags$div(class = "panel-body", 
-             id = "movies",
-             vals$mobjs,
-             sortable_js("movies", #note the container id
-                                    options = sortable_options(
-                                      sort = FALSE, #prevents the list items from moving inside the container but still can interact
-                                      group = list(
-                                        pull = "clone", #clones the movie when we drag it
-                                        name = "sortGroup1", #makes all the movies fall under sortGroup1. kinda like a category
-                                        put = F #prevents dropping into the movie area
-                                      ),
-                                      onSort = sortable_js_capture_input("sort_vars") #technically useless jz leave here first for my referencing
-                                    )
-             )
-             )
+    vals$mobjs
   })
-}
+  
+  #past data table
+  #output$databoard <- renderTable({
+  #      vals$pastdata
+  #})
+  
+  #resultsboard
+  output$resultboard <- renderTable({
+    vals$resultsdf[1:vals$day, ]
+    
+    })
+  
+  #leaderboard
+  output$leaderboard <- renderTable({
+    leaderboard <- getLeaderboard()
+    leaderboard})
+  }
 
 ##################### APP #####################
 shinyApp(ui, server)

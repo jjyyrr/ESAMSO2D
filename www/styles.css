@@ -27,8 +27,8 @@
     background-color: rgba(102, 255, 153, 0.5);
     display: flex;
     /*border: 1px solid #0b0423;*/
-    align-items: right;
-    justify-content: right;
+    align-items: center;
+    justify-content: center;
     catch: 1;
 }
 
@@ -78,5 +78,28 @@
     display: flex;
     align-items: center;
     border: 1px solid #0b0423;
+    justify-content: center;
+}
+.mvcon {
+    height: 100%;
+    width: 100%;
+    padding: 1px;
+    color: #0b0423;
+    background: #ffffff00;
+    /*display: flex;*/
+    align-items: center;
+    border: 1px solid #0b0423;
+    justify-content: center;
+}
+.mdeets {
+    height: 100%;
+    width: 100%;
+    margin-left: 10px;
+    padding: 3px;
+    color: #0b0423;
+    background: #ffffff00;
+    /*display: flex;*/
+    align-items: center;
+
     justify-content: center;
 }

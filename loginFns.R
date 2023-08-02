@@ -10,20 +10,24 @@ getAWSConnection <- function(){
   conn
 }
 
-query <- function(queryString){
+getPlayerID <- function(playername,password){
+  #open the connection
   conn <- getAWSConnection()
+  querytemplate <- "SELECT * FROM PlayersDB WHERE PlayerName=?id1 AND Password=?id2;"
+  queryString<- sqlInterpolate(conn, querytemplate,id1=playername,id2=password)
   result <- dbGetQuery(conn,queryString)
+  
+  if (nrow(result)==1){
+    playerid <- result$PlayerID[1]
+  } else {
+    print(result) #for debugging
+    playerid <- 0
+  }
+  
   dbDisconnect(conn)
-  result
+  
+  playerid
 }
-
-queryExc <- function(queryString){
-  conn <- getAWSConnection()
-  result <- dbExecute(conn,queryString)
-  dbDisconnect(conn)
-  result
-}
-
 
 #### startupModal ####
 startUpModal <- function() {
@@ -32,7 +36,7 @@ startUpModal <- function() {
     footer = tagList(
       actionButton("register", "Register"),
       actionButton("login", "Login"),
-      actionButton("skip", "Skip")
+      #actionButton("skip", "Skip")
     )
     
   )
@@ -41,13 +45,15 @@ startUpModal <- function() {
 #### register ####
 
 GenerateName <- function(){
+  conn <- getAWSConnection()
   
   adj<-query("SELECT word FROM RandomWords WHERE adj=1 ORDER BY RAND() LIMIT 1")
   col<-query("SELECT word FROM RandomWords WHERE adj=2 ORDER BY RAND() LIMIT 1")
   ani<-query("SELECT word FROM RandomWords WHERE adj=3 ORDER BY RAND() LIMIT 1")
   
+  dbDisconnect(conn)
+  
   n<-paste(adj[1,1],col[1,1],ani[1,1],sep ="" )
-  # TODO: check if name is existing in player db
 }
 
 registerModal <- function(username,failed = FALSE) {
@@ -56,7 +62,7 @@ registerModal <- function(username,failed = FALSE) {
     title = "Register a new user",
     
     ## TODO: make the generate button work
-    username ,
+    textOutput("randomname") ,
     actionButton("generate", "Generate"),
     
     passwordInput("password1", "Enter a new password:"),
@@ -66,15 +72,15 @@ registerModal <- function(username,failed = FALSE) {
       div(tags$b("The passwords do not match. Try again.", style = "color: red;")),
     
     footer = tagList(
-      modalButton("Cancel"),
+      #modalButton("Cancel"),
       actionButton("registerOk", "OK")
     )
   )
 }
 
 registerPlayer <- function(playername,password){
-
   conn <- getAWSConnection()
+  
   querytemplate <- "INSERT INTO PlayersDB (PlayerName,Password) VALUES (?id1,?id2);"
   queryString<- sqlInterpolate(conn, querytemplate,id1=playername,id2=password)
   result<-dbExecute(conn,queryString)
@@ -95,7 +101,7 @@ loginModal <- function(failed = FALSE) {
       div(tags$b("There is no registered player with that name and password. Try again or re-register.", style = "color: red;")),
     
     footer = tagList(
-      modalButton("Cancel"),
+      #modalButton("Cancel"),
       actionButton("loginok", "OK")
     )
   )
@@ -105,6 +111,7 @@ postLoginModal <- function() {
   modalDialog(
     title = "Would you like play the tutorial or start the game?",
     footer = tagList(
+      actionButton("changepw", "Change Password"),
       actionButton("tutorial", "Tutorial"),
       actionButton("startgame", "Start Game")
     )
@@ -114,7 +121,6 @@ postLoginModal <- function() {
 
 #### Change Password ####
 
-
 changepwModal <- function(playername, currentwrong = FALSE, newwrong = FALSE) {
   modalDialog(
     title = "Change Password",
@@ -122,9 +128,9 @@ changepwModal <- function(playername, currentwrong = FALSE, newwrong = FALSE) {
     p("Changing password for: "),
     HTML("<b>", playername,"</b>"),
     
-    passwordInput("password4", "Enter your current password:"),
-    passwordInput("password5", "Enter new password:"),
-    passwordInput("password6", "Confirm new password:"),
+    passwordInput("passwordcurrent", "Enter your current password:"),
+    passwordInput("passwordnew1", "Enter new password:"),
+    passwordInput("passwordnew2", "Confirm new password:"),
     
     if (currentwrong)
       div(tags$b("Current password is wrong", style = "color: red;")),
@@ -141,34 +147,9 @@ changepwModal <- function(playername, currentwrong = FALSE, newwrong = FALSE) {
 
 
 changePwQuery <- function(playername,oldPW,newPW){
-  querytemplate <- "UPDATE LeaderPlayer SET password=?newPW WHERE playername=?Plname AND password=?oldPW;"
-  queryString<- sqlInterpolate(conn, querytemplate, Plname=playername , newPW=newPW,oldPW=oldPW)
-  query(queryString)
-}
-
-successfulchangeModal <- function() {
-  print("im in modal")
-  modalDialog(
-    title = "Password Change Successful",
-    footer = tagList(modalButton("Close"))
-  )
-}
-
-getPlayerID <- function(playername,password){
-  #open the connection
   conn <- getAWSConnection()
-  querytemplate <- "SELECT * FROM PlayersDB WHERE PlayerName=?id1 AND Password=?id2;"
-  query<- sqlInterpolate(conn, querytemplate,id1=playername,id2=password)
-  result <- query(query)
-
-  if (nrow(result)==1){
-    playerid <- result$PlayerID[1]
-  } else {
-    print(result) #for debugging
-    playerid <- 0
-  }
-
+  querytemplate <- "UPDATE PlayersDB SET Password=?newPW WHERE PlayerName=?Plname AND Password=?oldPW;"
+  queryString<- sqlInterpolate(conn, querytemplate, Plname=playername , newPW=newPW,oldPW=oldPW)
+  dbExecute(conn,queryString)
   dbDisconnect(conn)
-
-  playerid
 }
