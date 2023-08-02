@@ -56,6 +56,14 @@ ui <- fluidPage(
   tags$head(includeCSS("www/styles.css"),
             tags$script(src = "movieobjects.js")),
   fluidRow(class = "panel panel-heading",
+<<<<<<< Updated upstream
+=======
+           style="background-image: url('CinemaBaseUILong.png');
+    background-size: cover;
+   background-position: absolute;
+           width:auto, height=auto",
+
+>>>>>>> Stashed changes
            div(class = "panel-heading",
                h3("I like to Movie Movie")
            ),
@@ -455,7 +463,31 @@ server <- function(input, output, session) {
     
   })
   
+<<<<<<< Updated upstream
   # next day button
+=======
+  
+  observeEvent(input$jsoutput, {
+    df<-data.frame(input$jsoutput)
+    
+    scheduled <- data.frame(
+      movie = df$input.jsoutput[c(TRUE, FALSE)],
+      period = df$input.jsoutput[c(FALSE, TRUE)]
+    )
+    
+    
+    #scheduled <- read.csv("scheduled.csv")
+    #append data dataframe
+    result <- calculate(scheduled,vals$day) #returns adrev, tix rev, rental cost, profit
+    vals$resultsdf <- rbind(vals$resultsdf, result)
+
+    vals$cash<-vals$cash + result[["Profits"]] #add profit to cash balance
+    showModal(resultboardModal())
+  })
+  
+    
+  # Next day button
+>>>>>>> Stashed changes
   observeEvent(input$nextday, {
     removeModal() #remove summary page
     
@@ -497,8 +529,10 @@ server <- function(input, output, session) {
   
   #Day counter
   output$day <- renderText({
+    actualdays <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday","Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
     if (vals$day <= 14) {
-      paste("Day ", vals$day, "/14")
+      day_of_week <- actualdays[vals$day]
+      paste("Day", vals$day, "/14,", day_of_week)
     } else {
       "Game Ended"
     }
