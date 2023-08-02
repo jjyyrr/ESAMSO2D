@@ -2,7 +2,7 @@
 tutorialModal <- function() {
   modalDialog(
     title = "Tutorial",
-    div(tags$p("You are a film programmer of a cinema, schedule movies in order to optimise profits. Once done, hit run on the bottom left. Your final score is the amount of cash balance left at the end of 14 days")),
+    div(tags$p("You are a film programmer of a cinema, schedule movies in order to optimise profits! Drag movies into the halls to schedule and hit run on the bottom left to simulate the day's earnings. Take note that different timings may bring different crowds! The final score is your cash balance at the end of 14 days")),
     footer = tagList(
       actionButton("startgame", "Start Game")
     )
@@ -12,7 +12,7 @@ tutorialModal <- function() {
 
 day2modal <- function() {
   modalDialog(
-    title = "Its day 2",
+    title = "It's day 2!",
     div(tags$p("Great work on your first day on the job, keep up the good work!")),
     footer = tagList(
       modalButton("Lets Go!")
@@ -24,7 +24,7 @@ day2modal <- function() {
 day4modal <- function() {
   modalDialog(
     title = "Its day 4!",
-    div(tags$p("Its thursday,a new movie has just been released! Modify your schedule to meet the demands for the new movie.")),
+    div(tags$p("It's Thursday, a new movie has just been released! Modify your schedule to meet the demands for the new movie.")),
     footer = tagList(
       modalButton("Lets Go!")
     )
@@ -45,7 +45,7 @@ day6modal <- function() {
 day8modal <- function() {
   modalDialog(
     title = "Monday Blues",
-    div(tags$p("Awesome work over the weekend! Its monday, ticket prices id back to $7/ticket.")),
+    div(tags$p("Awesome work over the weekend! It's monday, ticket prices are back to $7/ticket.")),
     footer = tagList(
       modalButton("Lets Go!")
     )
@@ -55,7 +55,7 @@ day8modal <- function() {
 day9modal <- function() {
   modalDialog(
     title = "Mission Possible unlisted",
-    div(tags$p("It has been 90 days since mission possible is released in cinemas. It is now released on Netflox. You decide that it is no longer profitable to screen it.")),
+    div(tags$p("It has been 90 days since Mission Possible was released in cinemas. It is now released on Netflox. Management has decided that it is no longer profitable to screen it.")),
     footer = tagList(
       modalButton("Lets Go!")
     )
