@@ -55,7 +55,9 @@ ui <- fluidPage(
             tags$script(src = "movieobjects.js")),
   
   fluidRow(class = "panel panel-heading",
-           style="background-image: url('CinemaBaseUILong.png'); background-size: 100% 100%; background-repeat: no-repeat; background-position: center;",
+           style="background-image: url('CinemaBaseUILong.png');
+    background-size: cover;
+    width: auto;height: auto; background-position: absolute;",
            div(class = "panel-heading",
                h3(style = "padding: 20px; color: #FFFFFF; text-align: center;", "I like to Movie Movie"),
            ),
