@@ -136,6 +136,6 @@ calculate<- function(scheduled){
   result
 }
 
-scheduled<-read.csv("scheduled.csv")
-scheduled
-calculateTicketsSold(scheduled)
+#scheduled<-read.csv("scheduled.csv")
+#scheduled
+#calculateTicketsSold(scheduled)

@@ -59,7 +59,7 @@ ui <- fluidPage(
             tags$script(src = "movieobjects.js")),
   
   fluidRow(class = "panel panel-heading",
-           style="background-image: url('LowerResbackground.png'); background-size: 100% auto ; background-repeat: no-repeat; background-position: center;",
+           style="background-image: url('LowerResbackground.png'); width: auto; height:auto ;  background-position: absolute ; background-size:cover;",
            div(class = "panel-heading",
                h3(style = "padding: 20px; color: #FFFFFF; text-align: center;", "I like to Movie Movie"),
            ),
@@ -119,28 +119,28 @@ ui <- fluidPage(
                column(width = 3,
                       tags$div(class = "panel panel-default",
                                tags$div(class = "panel-heading", icon("user"), tags$strong("Username") ), #makes it bold
-                               textOutput("loggedInAs"),
+                               uiOutput("loggedInAs"),
                                
                       )
                ),
              column(width = 3,
                     tags$div(class = "panel panel-default",
                              tags$div(class = "panel-heading", icon("calendar-days"), tags$strong("Day") ), #makes it bold
-                             textOutput("day")
+                             uiOutput("day")
                              
                     )
              ),
              column(width = 3,
                     tags$div(class = "panel panel-default",
                              tags$div(class = "panel-heading", icon("sack-dollar"), tags$strong("Cash balance") ), #makes it bold
-                             textOutput("cash")
+                             uiOutput("cash")
                              
                     )
              ),
              column(width = 3,
                     tags$div(class = "panel panel-default",
                              tags$div(class = "panel-heading", icon("ticket"), tags$strong("Ticket prices") ), #makes it bold
-                             textOutput("ticketprices")
+                             uiOutput("ticketprices")
                              
                     )
              ),
@@ -577,37 +577,63 @@ server <- function(input, output, session) {
   })
   
   # Display name 
-  output$loggedInAs <- renderText({
-    if (is.null(vals$playername))
-      "Not logged in yet."
-    else{ 
-      vals$playername
+  output$loggedInAs <- renderUI({
+    if (is.null(vals$playername)) {
+      tagList(
+        tags$p("Not logged in yet.", style = "text-align: center;")
+      )
+    } else {
+      tagList(
+        tags$p(vals$playername, style = "text-align: center;")
+      )
     }
   })
   
   # Display cash 
-  output$cash <- renderText({
-      paste("Cash balance: $ ", vals$cash)
+  output$cash <- renderUI({
+    tagList(
+      tags$p(
+        style = "text-align: center;",
+        paste("Cash balance: $", vals$cash)
+      )
+    )
   })
   
+  
   #Day counter
-  output$day <- renderText({
+  output$day <- renderUI({
+    actualdays <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday","Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
     if (vals$day <= 14) {
-      paste("Day ", vals$day, "/14")
+      day_of_week <- actualdays[vals$day]
+      tagList(
+        tags$p(
+          style = "text-align: center;",
+          paste("Day", vals$day, "/14,", day_of_week)
+        )
+      )
     } else {
-      "Game Ended"
+      tagList(
+        tags$p(
+          style = "text-align: center;",
+          "Game Ended"
+        )
+      )
     }
   })
   
   #ticket prices
-  output$ticketprices <- renderText({
-    if (vals$day %in% c(6,7,12,13,14)) {
-      paste("$",10, "/ticket")
-    } else {
-      paste("$",7, "/ticket")
-    }
+  output$ticketprices <- renderUI({
+    tagList(
+      tags$p(
+        style = "text-align: center;",
+        if (vals$day %in% c(6, 7, 12, 13, 14)) {
+          paste("$", 10, "/ticket")
+        } else {
+          paste("$", 7, "/ticket")
+        }
+      )
+    )
   })
-  
   
   #movie objects
   output$movieobjects<- renderUI({
