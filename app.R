@@ -1,12 +1,11 @@
 ### main code
 library(shiny)
-library(jsonlite)
-library(htmlwidgets)
-library(sortable)
+library(shinyjs) # for Javascript
+library(htmlwidgets)# for Javascript
+library(sortable) # for drag and drop functionality
 library(magrittr)
-library(shinyjs)
-library(DBI)
-library(tidyverse)
+library(DBI) #for interacting with database
+library(tidyverse) #for data manipulation
 
 source("loginFns.R")
 source("moviemaker.R")
@@ -60,13 +59,7 @@ ui <- fluidPage(
             tags$script(src = "movieobjects.js")),
   
   fluidRow(class = "panel panel-heading",
-<<<<<<< Updated upstream
-           style="background-image: url('CinemaBaseUILong.png');
-    background-size: cover;
-    width: auto;height: auto; background-position: absolute;",
-=======
-           #style="background-image: url('CinemaBaseUILong.png'); background-size: 100% auto ; background-repeat: no-repeat; background-position: center;",
->>>>>>> Stashed changes
+           style="background-image: url('LowerResbackground.png'); background-size: 100% auto ; background-repeat: no-repeat; background-position: center;",
            div(class = "panel-heading",
                h3(style = "padding: 20px; color: #FFFFFF; text-align: center;", "I like to Movie Movie"),
            ),
@@ -496,13 +489,15 @@ server <- function(input, output, session) {
     df<-data.frame(input$jsoutput)
     
     scheduled <- data.frame(
-      movie = df$input.jsoutput[c(TRUE, FALSE)],
-      period = df$input.jsoutput[c(FALSE, TRUE)]
+      day = vals$day,
+      movie = df$input.jsoutput[c(TRUE, FALSE, FALSE)],
+      period = df$input.jsoutput[c(FALSE, TRUE, FALSE)],
+      hall = df$input.jsoutput[c(FALSE, FALSE, TRUE)]
     )
-    
+    print(scheduled)
     #scheduled <- read.csv("scheduled.csv")
     #append data dataframe
-    result <- calculate(scheduled,vals$day) #returns adrev, tix rev, rental cost, profit
+    result <- calculate(scheduled) #returns adrev, tix rev, rental cost, profit
     
     vals$resultsdf <- rbind(vals$resultsdf, result)
     vals$cash<-vals$cash + result[["Profits"]] #add profit to cash balance

@@ -1,4 +1,4 @@
-
+library(DBI)
 library(tidyverse)
 
 getAWSConnection <- function(){
@@ -11,8 +11,6 @@ getAWSConnection <- function(){
   
   conn
 }
-
-initialConditions <- function(){}
 
 calcualteAdRevenue <- function(n){#input number of movies
   revenuePerAd<-100
@@ -82,8 +80,8 @@ calculateRatingsCoeff <- function(name){
   ratingscoeff
 }
 
-calculateTicketsRevenue <- function(scheduled,day){
-  rev<-0
+calculateTicketsSold <- function(scheduled){
+  day<-scheduled[1,"day"]
   
   conn <- getAWSConnection()
   
@@ -101,40 +99,34 @@ calculateTicketsRevenue <- function(scheduled,day){
     releasecoeff <- calculateReleaseCoeff(movie,day) 
     ratingscoeff <- calculateRatingsCoeff(movie)
     
+    scheduledSorted<-scheduled[order(scheduled$period), ] #sort by period
+    scheduled$tixsold <- round(100 * demandmodel[scheduledSorted$period,] * releasecoeff * ratingscoeff * runif(1,0.8,1.2))
+    
     querytemplate1 <- "SELECT Dailydemand FROM MoviesDB WHERE MovieName=?name"
     queryString1<- sqlInterpolate(conn, querytemplate1,name=movie)
     queryoutput1<-dbGetQuery(conn,queryString1)
-    
     dd<-queryoutput1[["Dailydemand"]]
+    print(dd)
     
+    for (i in 1:nrow(scheduled[scheduled["movie"]== movie,])){
+      print(scheduled[scheduled["movie"]==movie,])
+      dd<-dd - scheduled[scheduled["movie"]==movie,][i,]$tixsold
+      print(dd)
+      if (dd<=0) { #exceed daily demand, max(tixsold + dd , 0)
+         scheduled[scheduled["movie"]==movie,][i,]$tixsold <- max(scheduled[scheduled["movie"]==movie,][i,]$tixsold + dd, 0)
+        }
     
-    for (p in scheduled[scheduled["movie"]==movie,"period"]){
-      
-      demandcoeff <- demandmodel[p,]
-    
-      tixsold <- round(100 * demandcoeff * releasecoeff * ratingscoeff * runif(1,0.5,1))
-      dd<-dd-tixsold
-      
-      
-      if (dd<=0) {
-        rev<- rev + 0
-      } else { if(day %in% c(6,7,12,13,14)){
-                  rev<- rev + tixsold * 10
-                } else{
-                   rev<- rev + tixsold *  7
-                  }
-      }
-    
-  }
+    }
   }
   dbDisconnect(conn)
-  rev
+  scheduled
 } 
 
-calculate<- function(scheduled,day){
+calculate<- function(scheduled){
+  scheduled2 <- calculateTicketsSold(scheduled)
   AdRevenue <- calcualteAdRevenue( nrow(scheduled) ) 
   RentalCost <- calculateRentalCost( table(scheduled$movie) )
-  TicketsRevenue <- calculateTicketsRevenue(scheduled,day)
+  TicketsRevenue
   
   TotalRevenue <- AdRevenue + TicketsRevenue
   Profit <- TotalRevenue - RentalCost
@@ -143,3 +135,7 @@ calculate<- function(scheduled,day){
   result<- data.frame(Day = day, AdRevenue = AdRevenue, TicketsRevenue = TicketsRevenue, RentalCost=RentalCost, Profits=Profit)
   result
 }
+
+scheduled<-read.csv("scheduled.csv")
+scheduled
+calculateTicketsSold(scheduled)

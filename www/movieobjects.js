@@ -10,7 +10,6 @@ function onAddFunction1(evt) {
     var cleancol = '#BDADEA'
     var checking = 0;
     
-    console.log(moviename)
     for (var i = rtind; i < rtind + mlen + 1; i++) {
         entryCell = document.getElementById('hall1period' + i);
         if (i > 48) { break; }
@@ -23,9 +22,11 @@ function onAddFunction1(evt) {
         /*this.el.removeChild(evt.item);*/
     } else {
         evt.to.style.backgroundColor = adcol; //change colour to yellow for scheduled div
+        
         evt.item.classList.add('scheduled'); //add scheduled class to div, for query when "run"
-
+        evt.item.setAttribute('data-hall', 1);//add hall as attribute to read during "run"
         evt.item.setAttribute('data-period', adind); //add period as attribute to read during "run"
+        
         if (cleanind < 49) {
             var cleanframe = document.getElementById('1time' + cleanind);
             var cleancell = document.getElementById('hall1period' + cleanind);
@@ -96,6 +97,7 @@ function onAddFunction2(evt) {
         evt.to.style.backgroundColor = adcol;
         evt.item.classList.add('scheduled');
         evt.item.setAttribute('data-period', adind);
+        evt.item.setAttribute('data-hall', 2);
         if (cleanind < 49) {
             var cleanframe = document.getElementById('2time' + cleanind);
             var cleancell = document.getElementById('hall2period' + cleanind);
@@ -157,6 +159,7 @@ function onAddFunction3(evt) {
         evt.to.style.backgroundColor = adcol;
         evt.item.classList.add('scheduled');
         evt.item.setAttribute('data-period', adind);
+        evt.item.setAttribute('data-hall', 3);
         if (cleanind < 49) {
             var cleanframe = document.getElementById('3time' + cleanind);
             var cleancell = document.getElementById('hall3period' + cleanind);
@@ -216,7 +219,7 @@ function onAddFunction4(evt) {
     else {
         evt.to.style.backgroundColor = adcol;
         evt.item.classList.add('scheduled');
-
+        evt.item.setAttribute('data-hall', 4);
         evt.item.setAttribute('data-period', adind);
         if (cleanind < 49) {
             var cleanframe = document.getElementById('4time' + cleanind);
@@ -262,12 +265,14 @@ function getScheduledData() {
     // Loop through each element and get custom attributes
     var dataArr = [];
     for (var i = 0; i < scheduledElements.length; i++) {
+      console.log(scheduledElements[i])
         var element = scheduledElements[i];
         var dataName = (element.dataset.name);
+        var dataHall = (element.dataset.hall);
         var dataPeriod = (element.dataset.period);
 
         // Push the data into the array
-        dataArr.push({ name: dataName, period: dataPeriod });
+        dataArr.push({ name: dataName, period: dataPeriod, hall: dataHall });
     }
 
     Shiny.setInputValue("jsoutput", dataArr);
