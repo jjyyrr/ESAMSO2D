@@ -12,27 +12,24 @@ getAWSConnection <- function(){
   conn
 }
 
-calcualteAdRevenue <- function(n){#input number of movies
+calcualteAdRevenue <- function(tab){#input number of movies
   revenuePerAd<-100
-  n*revenuePerAd
+  tab$AdRevenue<-tab$shown*revenuePerAd
+  tab
 } 
 
 calculateRentalCost <- function(tab){#table of movie and count
-
-  cost<-0
-  
-  for (name in names(tab)){
-    conn <- getAWSConnection()
-    querytemplate <- "SELECT Cost FROM MoviesDB WHERE MovieName=?name"
-    queryString<- sqlInterpolate(conn, querytemplate,name=name)
-    queryoutput<-dbGetQuery(conn,queryString)
-    dbDisconnect(conn)
-
-    cost<- cost+ tab[[name]]*queryoutput[["Cost"]]
     
-    }
-  cost
-  
+    conn <- getAWSConnection()
+    querytemplate <- "SELECT MovieName, Cost FROM MoviesDB"
+    queryString<- sqlInterpolate(conn, querytemplate,name=name)
+    table2<-dbGetQuery(conn,queryString)
+    dbDisconnect(conn)
+    
+    colnames(table2) <- c("Movie", "Cost")
+    table3<-left_join(tab, table2, by = "Movie")
+    table3$rentalcost<-table3$shown * table3$Cost
+    table3[, c("Movie","rentalcost")]
 } 
 
 calculateDemandCoeff <- function(period,day){
@@ -95,7 +92,6 @@ calculateTicketsSold <- function(scheduled){
   demandmodel<-dbGetQuery(conn,queryString2)
   
   for (movie in unique(scheduled[,"movie"])){
-    
     releasecoeff <- calculateReleaseCoeff(movie,day) 
     ratingscoeff <- calculateRatingsCoeff(movie)
     
@@ -115,27 +111,69 @@ calculateTicketsSold <- function(scheduled){
       if (dd<=0) { #exceed daily demand, max(tixsold + dd , 0)
          scheduled[scheduled["movie"]==movie,][i,]$tixsold <- max(scheduled[scheduled["movie"]==movie,][i,]$tixsold + dd, 0)
         }
-    
     }
   }
   dbDisconnect(conn)
   scheduled
 } 
 
-calculate<- function(scheduled){
-  scheduled2 <- calculateTicketsSold(scheduled)
-  AdRevenue <- calcualteAdRevenue( nrow(scheduled) ) 
-  RentalCost <- calculateRentalCost( table(scheduled$movie) )
-  TicketsRevenue
+calculatemovieStats<- function(scheduled2){
+  scheduled2tab <- as.data.frame(table(scheduled2$movie))
+  colnames(scheduled2tab) <- c("Movie", "shown")
+  
+  day<-scheduled2[1,"day"]
+  AdRevenue<-calcualteAdRevenue(scheduled2tab)
+
+  RentalCost<-calculateRentalCost(scheduled2tab)
+
+  Ntixsold<-aggregate(tixsold ~ movie, scheduled2, sum)
+
+  if (day %in% c(6,7,12,13,14)) {
+    Ntixsold$ticketRevenue<-Ntixsold$tixsold*10
+  } else {
+    Ntixsold$ticketRevenue<-Ntixsold$tixsold*7
+  }
+  
+  colnames(Ntixsold) <- c("Movie", "No. tickets sold","Ticket revenue")
+  
+  movie_stats <- merge(AdRevenue, RentalCost, by = "Movie")
+  movie_stats <- merge(movie_stats, Ntixsold, by = "Movie")
+  movie_stats <-data.frame(Day = day, movie_stats)
+  colnames(movie_stats) <- c("Day","Movie","Shown","Ad Revenue","Rental Cost", "No. Tickets Sold","Tickets Revenue")
+  movie_stats
+}
+
+
+calculateResult<- function(movie_stats){
+  
+  day<-movie_stats[1,"Day"]
+  
+  AdRevenue <- sum(movie_stats["Ad Revenue"])
+  RentalCost <- sum(movie_stats["Rental Cost"])
+  TicketsRevenue <- sum(movie_stats["Tickets Revenue"])
   
   TotalRevenue <- AdRevenue + TicketsRevenue
   Profit <- TotalRevenue - RentalCost
   
-  #return cost, rental(permovie or total?), tickets revenue(breakdown of tix per show? breakdown of revenue per movie?)
-  result<- data.frame(Day = day, AdRevenue = AdRevenue, TicketsRevenue = TicketsRevenue, RentalCost=RentalCost, Profits=Profit)
+  result<- data.frame(day = as.integer(day), AdRevenue = AdRevenue, TicketsRevenue = TicketsRevenue, RentalCost=RentalCost, Profits=Profit)
   result
 }
 
-#scheduled<-read.csv("scheduled.csv")
-#scheduled
-#calculateTicketsSold(scheduled)
+calculateUtilisation <- function(scheduled2){
+
+  utils <- round(aggregate(rt ~ hall, scheduled2, sum)[2]/58,2)
+  filled <- round(aggregate(tixsold ~ hall, scheduled2, sum)[2]/ (table(scheduled2$hall)*100),2)
+  
+  utilisation<- data.frame(day=as.integer(scheduled2[1,"day"]),
+                           hall1util=utils[1,],
+                           hall2util=utils[2,],
+                           hall3util=utils[3,],
+                           hall4util=utils[4,],
+                           hall1filled=filled[1,],
+                           hall2filled=filled[2,],
+                           hall3filled=filled[3,],
+                           hall4filled=filled[4,]
+                           )
+  utilisation
+}
+

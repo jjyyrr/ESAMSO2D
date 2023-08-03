@@ -4,10 +4,10 @@ function onAddFunction1(evt) {
     var rtcol = evt.item.dataset.colstr;
     var moviename = evt.item.dataset.name;
     var adind = parseInt(evt.to.id.split('hall1period')[1]);
-    var adcol = '#F6EFA6'
+    var adcol = '#F6EFA6';
     var rtind = parseInt(adind + 1);
     var cleanind = parseInt(adind + mlen + 1);
-    var cleancol = '#BDADEA'
+    var cleancol = '#BDADEA';
     var checking = 0;
     
     for (var i = rtind; i < rtind + mlen + 1; i++) {
@@ -26,6 +26,7 @@ function onAddFunction1(evt) {
         evt.item.classList.add('scheduled'); //add scheduled class to div, for query when "run"
         evt.item.setAttribute('data-hall', 1);//add hall as attribute to read during "run"
         evt.item.setAttribute('data-period', adind); //add period as attribute to read during "run"
+        evt.item.setAttribute('data-rt', mlen+2);
         
         if (cleanind < 49) {
             var cleanframe = document.getElementById('1time' + cleanind);
@@ -98,6 +99,7 @@ function onAddFunction2(evt) {
         evt.item.classList.add('scheduled');
         evt.item.setAttribute('data-period', adind);
         evt.item.setAttribute('data-hall', 2);
+        evt.item.setAttribute('data-rt', mlen+2);
         if (cleanind < 49) {
             var cleanframe = document.getElementById('2time' + cleanind);
             var cleancell = document.getElementById('hall2period' + cleanind);
@@ -160,6 +162,7 @@ function onAddFunction3(evt) {
         evt.item.classList.add('scheduled');
         evt.item.setAttribute('data-period', adind);
         evt.item.setAttribute('data-hall', 3);
+        evt.item.setAttribute('data-rt', mlen+2);
         if (cleanind < 49) {
             var cleanframe = document.getElementById('3time' + cleanind);
             var cleancell = document.getElementById('hall3period' + cleanind);
@@ -221,6 +224,7 @@ function onAddFunction4(evt) {
         evt.item.classList.add('scheduled');
         evt.item.setAttribute('data-hall', 4);
         evt.item.setAttribute('data-period', adind);
+        evt.item.setAttribute('data-rt', mlen+2);
         if (cleanind < 49) {
             var cleanframe = document.getElementById('4time' + cleanind);
             var cleancell = document.getElementById('hall4period' + cleanind);
@@ -270,9 +274,10 @@ function getScheduledData() {
         var dataName = (element.dataset.name);
         var dataHall = (element.dataset.hall);
         var dataPeriod = (element.dataset.period);
+        var dataRt = (element.dataset.rt);
 
         // Push the data into the array
-        dataArr.push({ name: dataName, period: dataPeriod, hall: dataHall });
+        dataArr.push({ name: dataName, period: dataPeriod, rt:dataRt, hall: dataHall });
     }
 
     Shiny.setInputValue("jsoutput", dataArr);
@@ -289,7 +294,7 @@ function clearday9() {
       var element = scheduledElements[i];
       if(element.dataset.name=="Mission Possible"){
         element.remove()
-          //fill in code here to reomove
+          //fill in code here to remove colours
         }
 
     }

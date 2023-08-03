@@ -72,11 +72,21 @@ day12modal <- function() {
   )
 }
 
-pastdataModal <- function() {
+utilsModal <- function() {
   modalDialog(
-    title = "Past data",
-    tableOutput("databoard"),
-    footer = modalButton("Done")
+    title = "Utilisation data",
+    tableOutput("utilisationboard"),
+    size="l",
+    footer = tagList(actionButton("downloadUtils", "Download Data"),modalButton("Done"))
+  )
+}
+
+statsModal <- function() {
+  modalDialog(
+    title = "Movie Statistics",
+    tableOutput("statsboard"),
+    size="l",
+    footer = tagList(actionButton("downloadStats", "Download Data"),modalButton("Done"))
   )
 }
 
@@ -84,7 +94,7 @@ resultboardModal <- function() {
   modalDialog(
     title = "Results",
     tableOutput("resultboard"),
-    footer = actionButton("nextday", "Next day >")
+    footer = tagList(actionButton("downloadresults", "Download Data"),actionButton("nextday", "Next day >"))
   )
 }
 

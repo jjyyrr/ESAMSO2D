@@ -38,7 +38,7 @@ lapply(name, function(name){tags$div(class = "mvcon", id = paste0("moviecon", na
                                               paste0("Popularity: ", pops," stars"), tags$br(), 
                                               paste0("Run time: ", as.integer(len)*15, " mins" ),tags$br(),
                                               paste0("Cost: $: ", cost), tags$br(),
-                                              paste0("Ending on day: ", endingday)
+                                              paste0("Ending on day ", endingday)
                                               
                                      )
 )}
@@ -63,17 +63,8 @@ ui <- fluidPage(
            div(class = "panel-heading",
                h3(style = "padding: 20px; color: #FFFFFF; text-align: center;", "I like to Movie Movie"),
            ),
-        
-           
            
            sidebarPanel(class = "panel-body", width = 2,
-                        
-                        #column(width = 12+
-                         #        textOutput("loggedInAs"),
-                         #      textOutput("day"),
-                         #      textOutput("cash")# TODO add the cash on hand here
-                        #),
-                        
                         
                         #Movie list container
                         column(width = 12,
@@ -99,12 +90,18 @@ ui <- fluidPage(
                                         tags$div(class = "panel-body", id = "legend",
                                                  tags$div(class = "ad", id = "ad", "Advertisements"),
                                                  tags$div(class = "clean", id = "clean", "Cleaning"),
-                                                 #textOutput("ticketprices") #TODO: make this change when it is weekend/PH
                                         )
                                )
                         ),
-                        column(width = 12,actionButton("pastdata", "Past Data",style={"width: 100%; background-color:#337ab7; color: white; font-weight: bold"})),
-                        
+                        column(width = 12,
+                               tags$div(class = "panel panel-default",
+                                        tags$div(class = "panel-heading", icon("database"), tags$strong("Data")),
+                                        tags$div(class = "panel-body", id = "legend",
+                                                 actionButton("utilsmodal", "Utilisation data",style={"width: 100%; background-color:#337ab7; color: white; font-weight: bold"}),
+                                                 actionButton("moviestats", "Movie statistics",style={"width: 100%; background-color:#337ab7; color: white; font-weight: bold"})
+                                      )    
+                                )
+                        ),
                         
                         #Run button
                         column(width = 12,actionButton("run", "RUN",style={"width: 100%; background-color:#00A86B;color: white;font-weight: bold"})),
@@ -121,6 +118,7 @@ ui <- fluidPage(
                                tags$div(class = "panel-heading", icon("user"), tags$strong("Username") ), #makes it bold
                                uiOutput("loggedInAs"),
                                
+                               textOutput("loggedInAs"),     
                       )
                ),
              column(width = 3,
@@ -140,8 +138,6 @@ ui <- fluidPage(
              column(width = 3,
                     tags$div(class = "panel panel-default",
                              tags$div(class = "panel-heading", icon("ticket"), tags$strong("Ticket prices") ), #makes it bold
-                             uiOutput("ticketprices")
-                             
                     )
              ),
 ),
@@ -293,8 +289,6 @@ ui <- fluidPage(
                      put = htmlwidgets::JS("function (to) {return to.el.children.length < 1;}")),
         
                       #onAdd executes the js code when a movie is dropped into a cell             
-                      #ps the onAdd cant comment inline cos stupid js and r tingz. 
-                      #but this is all to change the frame and cell colors when dropping. i tried to name it to make it as easy to understand le
                       onAdd = htmlwidgets::JS("function (evt) {onAddFunction1(evt);}"),
         
                       #onMove executes the moment u drag the movie off and it touches a different cell. 
@@ -351,7 +345,7 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
   # reactiveValues object for storing items like the user password
-  vals <- reactiveValues(randomName=NULL, password = NULL, playerid=NULL, playername=NULL, gamevariantid=1, score=NULL, day=0, gameEnded=F, cash=0, mobjs=NULL, resultsdf=NULL)
+  vals <- reactiveValues(randomName=NULL, password = NULL, playerid=NULL, playername=NULL, gamevariantid=1, score=NULL, day=0, gameEnded=F, cash=0, mobjs=NULL, resultsdf=NULL,movieStatsdf=NULL,utilsdf=NULL)
   
   
   #show modal on startup
@@ -369,8 +363,29 @@ server <- function(input, output, session) {
   #skip button
   observeEvent(input$skip, {
     removeModal() #remove start up modal
+    
+    #load initial conditions
+    vals$cash<- 10000
+    vals$day<-1
     vals$movielist<-generatemlist(1)
     vals$mobjs<-generateMobjs(vals$movielist) #generate movie list
+    vals$resultsdf <- data.frame(
+      Day = integer(),
+      AdRevenue= numeric(),
+      TicketsRevenue = numeric(),
+      RentalCost = numeric(),
+      Profits = numeric(),
+      stringsAsFactors = FALSE
+    )
+    vals$utilsdf <- data.frame(hall1util=numeric(),
+                               hall2util=numeric(),
+                               hall3util=numeric(),
+                               hall4util=numeric(),
+                               hall1filled=numeric(),
+                               hall2filled=numeric(),
+                               hall3filled=numeric(),
+                               hall4filled=numeric()
+    )
   })
   
   #Generate Button
@@ -457,20 +472,30 @@ server <- function(input, output, session) {
     vals$day<-1
     vals$movielist<-generatemlist(1)
     vals$mobjs<-generateMobjs(vals$movielist) #generate movie list
-    vals$resultsdf <- data.frame(
-      Day = integer(),
-      AdRevenue= numeric(),
-      TicketsRevenue = numeric(),
-      RentalCost = numeric(),
-      Profits = numeric(),
-      stringsAsFactors = FALSE
-    )
-  })
-  
-  # Tutorial Button
-  observeEvent(input$pastdata, {
-    removeModal() #remove post-login modal
-    showModal(pastdataModal())
+    vals$resultsdf <- data.frame(day = integer(),
+                                  AdRevenue= numeric(),
+                                  TicketsRevenue = numeric(),
+                                  RentalCost = numeric(),
+                                  Profits = numeric()
+                                )
+    vals$utilsdf <- data.frame(day=integer(),
+                               hall1util=numeric(),
+                               hall2util=numeric(),
+                               hall3util=numeric(),
+                               hall4util=numeric(),
+                               hall1filled=numeric(),
+                               hall2filled=numeric(),
+                               hall3filled=numeric(),
+                               hall4filled=numeric()
+                              )
+    vals$movieStatsdf<- data.frame("Day"=integer(),
+                                    "Movie"=numeric(),
+                                    "Shown"=integer(),
+                                    "Ad Revenue"=numeric(),
+                                    "Rental Cost"=numeric(), 
+                                    "No. Tickets Sold"=numeric(),
+                                    "Tickets Revenue"=numeric()
+                                    )
   })
   
   # RUN button
@@ -484,23 +509,32 @@ server <- function(input, output, session) {
   
   })
   
-  
+  ### reading from timetable
   observeEvent(input$jsoutput, {
     df<-data.frame(input$jsoutput)
     
     scheduled <- data.frame(
       day = vals$day,
-      movie = df$input.jsoutput[c(TRUE, FALSE, FALSE)],
-      period = df$input.jsoutput[c(FALSE, TRUE, FALSE)],
-      hall = df$input.jsoutput[c(FALSE, FALSE, TRUE)]
+      movie = df$input.jsoutput[c(TRUE, FALSE, FALSE, FALSE)],
+      period = as.integer(df$input.jsoutput[c(FALSE, TRUE, FALSE, FALSE)]),
+      rt = as.integer(df$input.jsoutput[c(FALSE, FALSE, TRUE, FALSE)]),
+      hall = as.integer(df$input.jsoutput[c(FALSE, FALSE, FALSE, TRUE)])
     )
-    print(scheduled)
-    #scheduled <- read.csv("scheduled.csv")
+
     #append data dataframe
-    result <- calculate(scheduled) #returns adrev, tix rev, rental cost, profit
+    scheduled2 <- calculateTicketsSold(scheduled)
     
+    moviestat<-calculatemovieStats(scheduled2)
+    vals$movieStatsdf <- rbind(vals$movieStatsdf, moviestat)
+    
+    result <- calculateResult(moviestat) #returns adrev, tix rev, rental cost, profit
     vals$resultsdf <- rbind(vals$resultsdf, result)
+    
     vals$cash<-vals$cash + result[["Profits"]] #add profit to cash balance
+    
+    utilisation <- calculateUtilisation(scheduled2)
+    vals$utilsdf<- rbind(vals$utilsdf, utilisation)
+    
     showModal(resultboardModal())
   })
     
@@ -569,6 +603,28 @@ server <- function(input, output, session) {
     vals$gameEnded<-FALSE
   })
   
+  
+  # utils Button
+  observeEvent(input$utilsmodal, {
+    removeModal()
+    showModal(utilsModal())
+  })
+  
+  observeEvent(input$downloadUtils,{
+    write.csv(vals$utilsdf,"utils.csv")
+  })
+  
+  # moviestats Button
+  observeEvent(input$moviestats, {
+    removeModal()
+    showModal(statsModal())
+  })
+  
+  observeEvent(input$downloadStats,{
+    write.csv(vals$movieStatsdf,"movie_stats.csv")
+  })
+  
+  
 ############### Output render ####################
   
   #generating random name for registration
@@ -598,7 +654,6 @@ server <- function(input, output, session) {
       )
     )
   })
-  
   
   #Day counter
   output$day <- renderUI({
@@ -635,20 +690,21 @@ server <- function(input, output, session) {
     )
   })
   
+  
   #movie objects
   output$movieobjects<- renderUI({
     vals$mobjs
   })
   
-  #past data table
-  #output$databoard <- renderTable({
-  #      vals$pastdata
-  #})
+  #utilisation board
+  output$utilisationboard <- renderTable({vals$utilsdf})
+  
+  #stats board
+  output$statsboard <- renderTable({vals$movieStatsdf})
   
   #resultsboard
   output$resultboard <- renderTable({
     vals$resultsdf[1:vals$day, ]
-    
     })
   
   #leaderboard
