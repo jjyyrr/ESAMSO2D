@@ -59,7 +59,7 @@ ui <- fluidPage(
             tags$script(src = "movieobjects.js")),
   
   fluidRow(class = "panel panel-heading",
-           style="background-image: url('LowerResbackground.png'); width: auto; height:auto ;  background-position: absolute ; background-size:cover;",
+          #style="background-image: url('LowerResbackground.png'); background-size: 100% auto ; background-repeat: no-repeat; background-position: center;",
            div(class = "panel-heading",
                h3(style = "padding: 20px; color: #FFFFFF; text-align: center;", "I like to Movie Movie"),
            ),
@@ -110,34 +110,34 @@ ui <- fluidPage(
            ), #bracket for closing sidebarPanel
            
            #main ui area
-           mainPanel(
-             
-             fluidRow(
-               column(width = 3,
-                      tags$div(class = "panel panel-default",
-                               tags$div(class = "panel-heading", icon("user"), tags$strong("Username") ), #makes it bold
-                               uiOutput("loggedInAs"),
-                               
-                               textOutput("loggedInAs"),     
-                      )
-               ),
-             column(width = 3,
-                    tags$div(class = "panel panel-default",
-                             tags$div(class = "panel-heading", icon("calendar-days"), tags$strong("Day") ), #makes it bold
-                             uiOutput("day")
-                             
-                    )
-             ),
-             column(width = 3,
-                    tags$div(class = "panel panel-default",
-                             tags$div(class = "panel-heading", icon("sack-dollar"), tags$strong("Cash balance") ), #makes it bold
-                             uiOutput("cash")
-                             
-                    )
-             ),
-             column(width = 3,
-                    tags$div(class = "panel panel-default",
-                             tags$div(class = "panel-heading", icon("ticket"), tags$strong("Ticket prices") ), #makes it bold
+          mainPanel(
+            
+            fluidRow(
+              column(width = 3,
+                     tags$div(class = "panel panel-default",
+                              tags$div(class = "panel-heading", icon("user"), tags$strong("Username"), style = "text-align: center" ), #makes it bold
+                              uiOutput("loggedInAs"),
+                              
+                     )
+              ),
+              column(width = 3,
+                     tags$div(class = "panel panel-default",
+                              tags$div(class = "panel-heading", icon("calendar-days"), tags$strong("Day") , style = "text-align: center"), #makes it bold
+                              uiOutput("day")
+                              
+                     )
+              ),
+              column(width = 3,
+                     tags$div(class = "panel panel-default",
+                              tags$div(class = "panel-heading", icon("sack-dollar"), tags$strong("Cash balance"), style = "text-align: center" ), #makes it bold
+                              uiOutput("cash")
+                              
+                     )
+              ),
+              column(width = 3,
+                     tags$div(class = "panel panel-default",
+                              tags$div(class = "panel-heading", icon("ticket"), tags$strong("Ticket prices"), style = "text-align: center" ), #makes it bold
+                              uiOutput("ticketprices")     
                     )
              ),
 ),
@@ -345,7 +345,7 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
   # reactiveValues object for storing items like the user password
-  vals <- reactiveValues(randomName=NULL, password = NULL, playerid=NULL, playername=NULL, gamevariantid=1, score=NULL, day=0, gameEnded=F, cash=0, mobjs=NULL, resultsdf=NULL,movieStatsdf=NULL,utilsdf=NULL)
+  vals <- reactiveValues(randomName=NULL, password = NULL, playerid=NULL, playername=NULL, gamevariantid=1, day=0, gameEnded=F, cash=0, mobjs=NULL, cum_results=NULL,cum_utils=NULL,cum_moviestats=NULL)
   
   
   #show modal on startup
@@ -472,29 +472,29 @@ server <- function(input, output, session) {
     vals$day<-1
     vals$movielist<-generatemlist(1)
     vals$mobjs<-generateMobjs(vals$movielist) #generate movie list
-    vals$resultsdf <- data.frame(day = integer(),
-                                  AdRevenue= numeric(),
-                                  TicketsRevenue = numeric(),
-                                  RentalCost = numeric(),
-                                  Profits = numeric()
+    vals$cum_results <- data.frame("Day" = integer(),
+                                  "Ad Revenue"= numeric(),
+                                  "Tix Revenue" = numeric(),
+                                  "Rental Cost" = numeric(),
+                                  "Profits" = numeric()
                                 )
-    vals$utilsdf <- data.frame(day=integer(),
-                               hall1util=numeric(),
-                               hall2util=numeric(),
-                               hall3util=numeric(),
-                               hall4util=numeric(),
-                               hall1filled=numeric(),
-                               hall2filled=numeric(),
-                               hall3filled=numeric(),
-                               hall4filled=numeric()
+    vals$cum_utils <- data.frame("Day"=integer(),
+                               "H1 Util" = numeric(),
+                               "H2 Util" = numeric(),
+                               "H3 Util" = numeric(),
+                               "H4 Util" = numeric(),
+                               "H1 % filled" = numeric(),
+                               "H2 % filled" = numeric(),
+                               "H3 % filled" = numeric(),
+                               "H4 % filled" = numeric()
                               )
-    vals$movieStatsdf<- data.frame("Day"=integer(),
-                                    "Movie"=numeric(),
-                                    "Shown"=integer(),
-                                    "Ad Revenue"=numeric(),
-                                    "Rental Cost"=numeric(), 
-                                    "No. Tickets Sold"=numeric(),
-                                    "Tickets Revenue"=numeric()
+    vals$cum_moviestats<- data.frame("Day" = integer(),
+                                    "Movie" = numeric(),
+                                    "Shown"=  integer(),
+                                    "Ad Revenue" = numeric(),
+                                    "Rental Cost" = numeric(), 
+                                    "No. Tickets Sold" = numeric(),
+                                    "Tickets Revenue" = numeric()
                                     )
   })
   
@@ -514,26 +514,27 @@ server <- function(input, output, session) {
     df<-data.frame(input$jsoutput)
     
     scheduled <- data.frame(
-      day = vals$day,
-      movie = df$input.jsoutput[c(TRUE, FALSE, FALSE, FALSE)],
-      period = as.integer(df$input.jsoutput[c(FALSE, TRUE, FALSE, FALSE)]),
-      rt = as.integer(df$input.jsoutput[c(FALSE, FALSE, TRUE, FALSE)]),
-      hall = as.integer(df$input.jsoutput[c(FALSE, FALSE, FALSE, TRUE)])
+      Day = as.integer(vals$day),
+      Movie = df$input.jsoutput[c(TRUE, FALSE, FALSE, FALSE)],
+      Period = as.integer(df$input.jsoutput[c(FALSE, TRUE, FALSE, FALSE)]),
+      RT = as.integer(df$input.jsoutput[c(FALSE, FALSE, TRUE, FALSE)]),
+      Hall = as.integer(df$input.jsoutput[c(FALSE, FALSE, FALSE, TRUE)])
     )
 
     #append data dataframe
     scheduled2 <- calculateTicketsSold(scheduled)
+    print(scheduled2)
     
-    moviestat<-calculatemovieStats(scheduled2)
-    vals$movieStatsdf <- rbind(vals$movieStatsdf, moviestat)
+    moviestat <- calculatemovieStats(scheduled2)
+    vals$cum_moviestats <- rbind(vals$cum_moviestats, moviestat)
     
     result <- calculateResult(moviestat) #returns adrev, tix rev, rental cost, profit
-    vals$resultsdf <- rbind(vals$resultsdf, result)
-    
+    vals$cum_results <- rbind(vals$cum_results, result)
+
     vals$cash<-vals$cash + result[["Profits"]] #add profit to cash balance
     
     utilisation <- calculateUtilisation(scheduled2)
-    vals$utilsdf<- rbind(vals$utilsdf, utilisation)
+    vals$cum_utils<- rbind(vals$cum_utils, utilisation)
     
     showModal(resultboardModal())
   })
@@ -636,11 +637,11 @@ server <- function(input, output, session) {
   output$loggedInAs <- renderUI({
     if (is.null(vals$playername)) {
       tagList(
-        tags$p("Not logged in yet.", style = "text-align: center;")
+        tags$p("Not logged in yet.", style = "text-align: center;padding:8px;")
       )
     } else {
       tagList(
-        tags$p(vals$playername, style = "text-align: center;")
+        tags$p(vals$playername, style = "text-align: center;padding:8px;")
       )
     }
   })
@@ -649,11 +650,12 @@ server <- function(input, output, session) {
   output$cash <- renderUI({
     tagList(
       tags$p(
-        style = "text-align: center;",
+        style = "text-align: center;padding:8px;",
         paste("Cash balance: $", vals$cash)
       )
     )
   })
+  
   
   #Day counter
   output$day <- renderUI({
@@ -662,14 +664,14 @@ server <- function(input, output, session) {
       day_of_week <- actualdays[vals$day]
       tagList(
         tags$p(
-          style = "text-align: center;",
+          style = "text-align: center;padding:8px;",
           paste("Day", vals$day, "/14,", day_of_week)
         )
       )
     } else {
       tagList(
         tags$p(
-          style = "text-align: center;",
+          style = "text-align: center;padding:8px;",
           "Game Ended"
         )
       )
@@ -680,7 +682,7 @@ server <- function(input, output, session) {
   output$ticketprices <- renderUI({
     tagList(
       tags$p(
-        style = "text-align: center;",
+        style = "text-align: center;padding:8px;",
         if (vals$day %in% c(6, 7, 12, 13, 14)) {
           paste("$", 10, "/ticket")
         } else {
@@ -690,28 +692,20 @@ server <- function(input, output, session) {
     )
   })
   
-  
   #movie objects
-  output$movieobjects<- renderUI({
-    vals$mobjs
-  })
+  output$movieobjects<- renderUI({vals$mobjs})
   
   #utilisation board
-  output$utilisationboard <- renderTable({vals$utilsdf})
+  output$utilisationboard <- renderTable({vals$cum_utils})
   
   #stats board
-  output$statsboard <- renderTable({vals$movieStatsdf})
+  output$statsboard <- renderTable({vals$cum_moviestats})
   
   #resultsboard
-  output$resultboard <- renderTable({
-    vals$resultsdf[1:vals$day, ]
-    })
+  output$resultboard <- renderTable({vals$cum_results})
   
   #leaderboard
-  output$leaderboard <- renderTable({
-    leaderboard <- getLeaderboard()
-    leaderboard})
-  }
+  output$leaderboard <- renderTable({getLeaderboard()})}
 
 ##################### APP #####################
 shinyApp(ui, server)

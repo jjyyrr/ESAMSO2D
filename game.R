@@ -78,7 +78,7 @@ calculateRatingsCoeff <- function(name){
 }
 
 calculateTicketsSold <- function(scheduled){
-  day<-scheduled[1,"day"]
+  day<-scheduled[1,"Day"]
   
   conn <- getAWSConnection()
   
@@ -91,12 +91,12 @@ calculateTicketsSold <- function(scheduled){
   queryString2<- sqlInterpolate(conn, querytemplate2,name=movie)
   demandmodel<-dbGetQuery(conn,queryString2)
   
-  for (movie in unique(scheduled[,"movie"])){
+  for (movie in unique(scheduled[,"Movie"])){
     releasecoeff <- calculateReleaseCoeff(movie,day) 
     ratingscoeff <- calculateRatingsCoeff(movie)
     
-    scheduledSorted<-scheduled[order(scheduled$period), ] #sort by period
-    scheduled$tixsold <- round(100 * demandmodel[scheduledSorted$period,] * releasecoeff * ratingscoeff * runif(1,0.8,1.2))
+    scheduledSorted<-scheduled[order(scheduled$Period), ] #sort by period
+    scheduled$tixsold <- round(100 * demandmodel[scheduledSorted$Period,] * releasecoeff * ratingscoeff * runif(1,0.8,1.2))
     
     querytemplate1 <- "SELECT Dailydemand FROM MoviesDB WHERE MovieName=?name"
     queryString1<- sqlInterpolate(conn, querytemplate1,name=movie)
@@ -104,12 +104,12 @@ calculateTicketsSold <- function(scheduled){
     dd<-queryoutput1[["Dailydemand"]]
     print(dd)
     
-    for (i in 1:nrow(scheduled[scheduled["movie"]== movie,])){
-      print(scheduled[scheduled["movie"]==movie,])
-      dd<-dd - scheduled[scheduled["movie"]==movie,][i,]$tixsold
+    for (i in 1:nrow(scheduled[scheduled["Movie"]== movie,])){
+      print(scheduled[scheduled["Movie"]==movie,])
+      dd<-dd - scheduled[scheduled["Movie"]==movie,][i,]$tixsold
       print(dd)
       if (dd<=0) { #exceed daily demand, max(tixsold + dd , 0)
-         scheduled[scheduled["movie"]==movie,][i,]$tixsold <- max(scheduled[scheduled["movie"]==movie,][i,]$tixsold + dd, 0)
+         scheduled[scheduled["Movie"]==movie,][i,]$tixsold <- max(scheduled[scheduled["Movie"]==movie,][i,]$tixsold + dd, 0)
         }
     }
   }
@@ -118,29 +118,30 @@ calculateTicketsSold <- function(scheduled){
 } 
 
 calculatemovieStats<- function(scheduled2){
-  scheduled2tab <- as.data.frame(table(scheduled2$movie))
+  scheduled2tab <- as.data.frame(table(scheduled2$Movie))
   colnames(scheduled2tab) <- c("Movie", "shown")
   
-  day<-scheduled2[1,"day"]
+  day<-scheduled2[1,"Day"]
   AdRevenue<-calcualteAdRevenue(scheduled2tab)
-
+  
   RentalCost<-calculateRentalCost(scheduled2tab)
-
-  Ntixsold<-aggregate(tixsold ~ movie, scheduled2, sum)
+  Ntixsold<-aggregate(tixsold ~ Movie, scheduled2, sum)
+  
 
   if (day %in% c(6,7,12,13,14)) {
     Ntixsold$ticketRevenue<-Ntixsold$tixsold*10
   } else {
     Ntixsold$ticketRevenue<-Ntixsold$tixsold*7
   }
-  
+
   colnames(Ntixsold) <- c("Movie", "No. tickets sold","Ticket revenue")
+
+  movie_stat <- merge(AdRevenue, RentalCost, by = "Movie")
+  movie_stat <- merge(movie_stat, Ntixsold, by = "Movie")
+  movie_stat <-data.frame(Day = day, movie_stat)
+  colnames(movie_stat) <- c("Day","Movie","Shown","Ad Revenue","Rental Cost", "No. Tickets Sold","Tickets Revenue")
   
-  movie_stats <- merge(AdRevenue, RentalCost, by = "Movie")
-  movie_stats <- merge(movie_stats, Ntixsold, by = "Movie")
-  movie_stats <-data.frame(Day = day, movie_stats)
-  colnames(movie_stats) <- c("Day","Movie","Shown","Ad Revenue","Rental Cost", "No. Tickets Sold","Tickets Revenue")
-  movie_stats
+  movie_stat
 }
 
 
@@ -155,16 +156,18 @@ calculateResult<- function(movie_stats){
   TotalRevenue <- AdRevenue + TicketsRevenue
   Profit <- TotalRevenue - RentalCost
   
-  result<- data.frame(day = as.integer(day), AdRevenue = AdRevenue, TicketsRevenue = TicketsRevenue, RentalCost=RentalCost, Profits=Profit)
+  result<- data.frame("Day" = as.integer(day), "Ad Revenue" = AdRevenue, "Tix Revenue" = TicketsRevenue, "Rental Cost" = RentalCost, "Profits" = Profit)
+  colnames(result) <- c("Day","Ad Revenue","Tix Revenue","Rental Cost","Profits")
   result
 }
 
 calculateUtilisation <- function(scheduled2){
 
-  utils <- round(aggregate(rt ~ hall, scheduled2, sum)[2]/58,2)
-  filled <- round(aggregate(tixsold ~ hall, scheduled2, sum)[2]/ (table(scheduled2$hall)*100),2)
+
+  utils <- round(aggregate(RT ~ Hall, scheduled2, sum)[2]/58,2)
+  filled <- round(aggregate(tixsold ~ Hall, scheduled2, sum)[2]/ (table(scheduled2$Hall)*100),2)
   
-  utilisation<- data.frame(day=as.integer(scheduled2[1,"day"]),
+  utilisation<- data.frame(day=as.integer(scheduled2[1,"Day"]),
                            hall1util=utils[1,],
                            hall2util=utils[2,],
                            hall3util=utils[3,],
@@ -174,6 +177,8 @@ calculateUtilisation <- function(scheduled2){
                            hall3filled=filled[3,],
                            hall4filled=filled[4,]
                            )
+  colnames(utilisation) <- c("Day","H1 Util","H2 Util","H3 Util","H4 Util", "H1 % Filled","H2 % Filled", "H3 % Filled", "H4 % Filled")
   utilisation
+  
 }
 
